@@ -64,6 +64,7 @@ export const actions = {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
+      secure: false,
       maxAge: 60 * 60 * 24 * 365 
     });
 
@@ -106,6 +107,7 @@ export const actions = {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
+      secure: false,
       maxAge: 60 * 60 * 24 * 365 
     });
 
