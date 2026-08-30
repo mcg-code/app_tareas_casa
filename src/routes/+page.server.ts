@@ -220,5 +220,67 @@ export const actions = {
 
     rememberMember(cookies, memberId);
     redirect(303, '/tasks');
+  },
+
+  searchHouses: async ({ request }) => {
+    const data = await request.formData();
+    const query = data.get('query')?.toString().trim();
+    if (!query) return fail(400, { searchError: 'Escribe tu nombre o el de la casa' });
+
+    // Buscar usuarios con ese nombre
+    const matchedUsers = await db.select().from(users).all();
+    const userMatches = matchedUsers.filter((u) => u.name.toLowerCase().includes(query.toLowerCase()));
+
+    // Buscar casas con ese nombre
+    const allHouses = await db.select().from(houses).all();
+    const houseMatches = allHouses.filter((h) => h.name.toLowerCase().includes(query.toLowerCase()));
+
+    const foundResults: Array<{
+      memberId: string;
+      userName: string;
+      emoji: string;
+      houseName: string;
+      houseCode: string;
+    }> = [];
+
+    // Casas encontradas
+    for (const h of houseMatches) {
+      const members = await db.select().from(houseMembers).where(eq(houseMembers.houseId, h.id));
+      for (const m of members) {
+        const u = await db.select().from(users).where(eq(users.id, m.userId)).get();
+        if (u && !foundResults.some((r) => r.memberId === m.id)) {
+          foundResults.push({
+            memberId: m.id,
+            userName: u.name,
+            emoji: m.emoji || '👤',
+            houseName: h.name,
+            houseCode: h.code
+          });
+        }
+      }
+    }
+
+    // Usuarios encontrados
+    for (const u of userMatches) {
+      const members = await db.select().from(houseMembers).where(eq(houseMembers.userId, u.id));
+      for (const m of members) {
+        const h = await db.select().from(houses).where(eq(houses.id, m.houseId)).get();
+        if (h && !foundResults.some((r) => r.memberId === m.id)) {
+          foundResults.push({
+            memberId: m.id,
+            userName: u.name,
+            emoji: m.emoji || '👤',
+            houseName: h.name,
+            houseCode: h.code
+          });
+        }
+      }
+    }
+
+    if (foundResults.length === 0) {
+      return fail(404, { searchError: `No se encontraron casas ni perfiles con "${query}"` });
+    }
+
+    return { searchResults: foundResults };
   }
 } satisfies Actions;
