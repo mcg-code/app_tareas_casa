@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trophy, Flame, ChevronDown, ListTodo, Gift } from '@lucide/svelte';
+  import { Trophy, Flame, ChevronDown, ListTodo, Gift, Home } from '@lucide/svelte';
   import { slide } from 'svelte/transition';
   
   let { data } = $props();
@@ -13,9 +13,19 @@
 
 <div class="space-y-6 pb-6 fade-in h-full">
   <header>
-    <h2 class="text-2xl font-bold flex items-center gap-2">
-      <span class="text-3xl">👨‍👩‍👧‍👦</span> Familia
-    </h2>
+    <div class="flex justify-between items-center">
+      <h2 class="text-2xl font-bold flex items-center gap-2">
+        <span class="text-3xl">👨‍👩‍👧‍👦</span> Familia
+      </h2>
+
+      <a 
+        href="/houses" 
+        class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-accent-cyan rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
+      >
+        <Home size={14} /> Mis Casas
+      </a>
+    </div>
+
     <div class="mt-4 p-3 bg-accent-cyan/10 border border-accent-cyan/30 rounded-xl text-center">
       <p class="text-xs text-gray-300">Código de la casa para invitar a otros:</p>
       <p class="text-lg font-mono font-bold text-accent-cyan mt-1">{data.user?.houseCode || 'Código Oculto'}</p>

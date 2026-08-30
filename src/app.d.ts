@@ -9,6 +9,7 @@ declare global {
 				userId: string;
 				houseId: string;
 				houseCode: string;
+				houseName: string;
 				name: string;
 				emoji: string;
 				points: number;

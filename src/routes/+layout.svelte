@@ -1,6 +1,7 @@
 <script lang="ts">
   import '../app.css';
   import BottomNav from '$lib/components/BottomNav.svelte';
+  import { page } from '$app/stores';
   
   let { children, data } = $props();
 </script>
@@ -11,8 +12,8 @@
     {@render children()}
   </main>
 
-  <!-- Barra de Navegación Inferior (solo si hay sesión) -->
-  {#if data.user}
+  <!-- Barra de Navegación Inferior (solo si hay sesión y dentro de una casa) -->
+  {#if data.user && !$page.url.pathname.startsWith('/houses')}
     <BottomNav />
   {/if}
 </div>

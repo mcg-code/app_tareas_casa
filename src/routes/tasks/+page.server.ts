@@ -119,7 +119,8 @@ export const load: PageServerLoad = async ({ locals }) => {
   return {
     tasks: todayTasks,
     quarantine: quarantineWithVotes,
-    userId: locals.user.memberId
+    userId: locals.user.memberId,
+    houseName: locals.user.houseName
   };
 };
 

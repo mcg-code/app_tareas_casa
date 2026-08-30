@@ -29,6 +29,7 @@ export const handle: Handle = async ({ event, resolve }) => {
           userId: userRecord.id,
           houseId: memberRecord.houseId,
           houseCode: houseRecord.code,
+          houseName: houseRecord.name,
           name: userRecord.name,
           emoji: memberRecord.emoji ?? '👤',
           points: memberRecord.points ?? 0

@@ -71,12 +71,21 @@
 </script>
 
 <div class="h-full w-full flex flex-col relative z-10 pt-4 pb-24">
-  <header class="mb-6 px-1 flex justify-between items-end">
+  <header class="mb-6 px-1 flex justify-between items-center">
     <div>
       <h2 class="text-2xl font-bold flex items-center gap-2">
         <span class="text-3xl">🎯</span> Tareas
       </h2>
     </div>
+
+    <a 
+      href="/houses" 
+      class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
+      title="Cambiar de casa"
+    >
+      <span>🏡</span>
+      <span class="max-w-[120px] truncate">{data.houseName || 'Mis Casas'}</span>
+    </a>
   </header>
 
   <!-- Pestañas -->
