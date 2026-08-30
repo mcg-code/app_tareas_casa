@@ -1,9 +1,30 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { fail, redirect, type Cookies } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
 import { users, houses, houseMembers, tasks } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { generateId, generateHouseCode } from '$lib/server/utils';
+
+function rememberMember(cookies: Cookies, memberId: string) {
+  let list: string[] = [];
+  try {
+    const raw = cookies.get('saved_members');
+    if (raw) list = JSON.parse(raw);
+  } catch {
+    list = [];
+  }
+  if (!list.includes(memberId)) {
+    list.unshift(memberId);
+  }
+  list = list.slice(0, 8);
+  cookies.set('saved_members', JSON.stringify(list), {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false,
+    maxAge: 60 * 60 * 24 * 365 * 2
+  });
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
@@ -77,6 +98,7 @@ export const actions = {
       maxAge: 60 * 60 * 24 * 365
     });
 
+    rememberMember(cookies, memberRecord.id);
     redirect(303, '/tasks');
   },
 
@@ -127,6 +149,7 @@ export const actions = {
       maxAge: 60 * 60 * 24 * 365
     });
 
+    rememberMember(cookies, member.id);
     redirect(303, '/tasks');
   },
 
@@ -162,6 +185,7 @@ export const actions = {
       maxAge: 60 * 60 * 24 * 365
     });
 
+    rememberMember(cookies, memberId);
     redirect(303, '/tasks');
   },
 

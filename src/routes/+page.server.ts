@@ -1,18 +1,122 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { fail, redirect, type Cookies } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { users, houses, houseMembers } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateId, generateHouseCode } from '$lib/server/utils';
 
-export const load: PageServerLoad = async ({ locals }) => {
+function rememberMember(cookies: Cookies, memberId: string) {
+  let list: string[] = [];
+  try {
+    const raw = cookies.get('saved_members');
+    if (raw) list = JSON.parse(raw);
+  } catch {
+    list = [];
+  }
+  if (!list.includes(memberId)) {
+    list.unshift(memberId);
+  }
+  list = list.slice(0, 8);
+  cookies.set('saved_members', JSON.stringify(list), {
+    path: '/',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false,
+    maxAge: 60 * 60 * 24 * 365 * 2
+  });
+}
+
+export const load: PageServerLoad = async ({ locals, cookies }) => {
   if (locals.user) {
     redirect(303, '/tasks');
   }
-  return {};
+
+  const savedMembersCookie = cookies.get('saved_members');
+  const savedProfiles: Array<{
+    memberId: string;
+    userName: string;
+    emoji: string;
+    houseName: string;
+    houseCode: string;
+  }> = [];
+
+  if (savedMembersCookie) {
+    try {
+      const memberIds: string[] = JSON.parse(savedMembersCookie);
+      for (const mId of memberIds) {
+        const m = await db.select().from(houseMembers).where(eq(houseMembers.id, mId)).get();
+        if (m) {
+          const u = await db.select().from(users).where(eq(users.id, m.userId)).get();
+          const h = await db.select().from(houses).where(eq(houses.id, m.houseId)).get();
+          if (u && h) {
+            savedProfiles.push({
+              memberId: m.id,
+              userName: u.name,
+              emoji: m.emoji || '👤',
+              houseName: h.name,
+              houseCode: h.code
+            });
+          }
+        }
+      }
+    } catch {
+      // Ignorar cookie corrupta
+    }
+  }
+
+  return {
+    savedProfiles
+  };
 };
 
 export const actions = {
+  quickLogin: async ({ request, cookies }) => {
+    const data = await request.formData();
+    const memberId = data.get('memberId')?.toString();
+    if (!memberId) return fail(400);
+
+    const member = await db.select().from(houseMembers).where(eq(houseMembers.id, memberId)).get();
+    if (!member) {
+      return fail(404, { error: 'Perfil no encontrado' });
+    }
+
+    cookies.set('session', member.id, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 60 * 60 * 24 * 365
+    });
+
+    rememberMember(cookies, member.id);
+    redirect(303, '/tasks');
+  },
+
+  forgetProfile: async ({ request, cookies }) => {
+    const data = await request.formData();
+    const memberId = data.get('memberId')?.toString();
+    if (!memberId) return fail(400);
+
+    let list: string[] = [];
+    try {
+      const raw = cookies.get('saved_members');
+      if (raw) list = JSON.parse(raw);
+    } catch {
+      list = [];
+    }
+
+    list = list.filter((id) => id !== memberId);
+    cookies.set('saved_members', JSON.stringify(list), {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 60 * 60 * 24 * 365 * 2
+    });
+
+    return { success: true };
+  },
+
   join: async ({ request, cookies }) => {
     const data = await request.formData();
     const code = data.get('code')?.toString().toUpperCase().trim();
@@ -30,7 +134,7 @@ export const actions = {
       return fail(400, { error: 'Código de casa inválido', code, name });
     }
 
-    // Crear o buscar usuario (simplificado)
+    // Crear o buscar usuario
     let user = await db.select().from(users).where(eq(users.name, name)).get();
     
     if (!user) {
@@ -68,6 +172,7 @@ export const actions = {
       maxAge: 60 * 60 * 24 * 365 
     });
 
+    rememberMember(cookies, member.id);
     redirect(303, '/tasks');
   },
 
@@ -105,7 +210,6 @@ export const actions = {
       lastActiveDate: new Date()
     });
 
-
     cookies.set('session', memberId, {
       path: '/',
       httpOnly: true,
@@ -114,6 +218,7 @@ export const actions = {
       maxAge: 60 * 60 * 24 * 365 
     });
 
+    rememberMember(cookies, memberId);
     redirect(303, '/tasks');
   }
 } satisfies Actions;
