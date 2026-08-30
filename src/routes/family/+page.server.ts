@@ -1,7 +1,7 @@
-import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { fail, redirect } from '@sveltejs/kit';
+import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { houseMembers, users, tasks, auditLogs } from '$lib/server/db/schema';
+import { houseMembers, users, tasks, auditLogs, houses } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -49,6 +49,23 @@ export const load: PageServerLoad = async ({ locals }) => {
   });
 
   return {
-    members: membersWithDetails
+    members: membersWithDetails,
+    houseName: locals.user.houseName
   };
 };
+
+export const actions = {
+  renameHouse: async ({ request, locals }) => {
+    if (!locals.user) return fail(401);
+    const data = await request.formData();
+    const newName = data.get('houseName')?.toString().trim();
+
+    if (!newName) {
+      return fail(400, { error: 'El nombre de la casa no puede estar vacío' });
+    }
+
+    await db.update(houses).set({ name: newName }).where(eq(houses.id, locals.user.houseId));
+
+    return { success: true };
+  }
+} satisfies Actions;

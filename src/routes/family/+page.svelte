@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { Trophy, Flame, ChevronDown, ListTodo, Gift, Home } from '@lucide/svelte';
+  import { Trophy, Flame, ChevronDown, ListTodo, Gift, Home, Pencil, Check } from '@lucide/svelte';
   import { slide } from 'svelte/transition';
   
   let { data } = $props();
   
   let expandedMember = $state<string | null>(null);
+  let isEditingHouseName = $state(false);
 
   function toggleExpand(id: string) {
     expandedMember = expandedMember === id ? null : id;
@@ -14,9 +15,23 @@
 <div class="space-y-6 pb-6 fade-in h-full">
   <header>
     <div class="flex justify-between items-center">
-      <h2 class="text-2xl font-bold flex items-center gap-2">
-        <span class="text-3xl">👨‍👩‍👧‍👦</span> Familia
-      </h2>
+      <div>
+        <h2 class="text-2xl font-bold flex items-center gap-2">
+          <span class="text-3xl">👨‍👩‍👧‍👦</span> Familia
+        </h2>
+        
+        <!-- Nombre de la casa con botón de editar -->
+        <div class="flex items-center gap-2 mt-1">
+          <span class="text-sm font-bold text-gray-200">{data.houseName || data.user?.houseName || 'Mi Casa'}</span>
+          <button 
+            onclick={() => isEditingHouseName = true}
+            class="text-gray-500 hover:text-accent-cyan p-1 rounded-lg transition-colors"
+            title="Cambiar nombre de la casa"
+          >
+            <Pencil size={13} />
+          </button>
+        </div>
+      </div>
 
       <a 
         href="/houses" 
@@ -31,6 +46,47 @@
       <p class="text-lg font-mono font-bold text-accent-cyan mt-1">{data.user?.houseCode || 'Código Oculto'}</p>
     </div>
   </header>
+
+  <!-- Modal editar nombre de casa -->
+  {#if isEditingHouseName}
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-navy-surface border border-white/10 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <Pencil size={18} class="text-accent-cyan" /> Cambiar Nombre del Hogar
+        </h3>
+
+        <form method="POST" action="?/renameHouse" class="space-y-4">
+          <div class="space-y-1.5">
+            <label for="new_house_name" class="text-xs font-bold text-gray-400 uppercase tracking-wider">Nuevo Nombre</label>
+            <input
+              type="text"
+              id="new_house_name"
+              name="houseName"
+              value={data.houseName || data.user?.houseName || ''}
+              class="w-full bg-navy-bg px-4 py-3 rounded-xl border border-white/10 text-white font-medium focus:border-accent-cyan outline-none"
+              required
+            />
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button
+              type="button"
+              onclick={() => isEditingHouseName = false}
+              class="flex-1 py-3 text-sm font-bold text-gray-400 hover:text-white bg-white/5 rounded-xl transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="flex-1 py-3 text-sm font-bold text-navy-bg bg-accent-cyan hover:bg-cyan-400 rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
+            >
+              Guardar <Check size={16} />
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  {/if}
 
   <div class="space-y-3">
     {#each data.members as member, i}

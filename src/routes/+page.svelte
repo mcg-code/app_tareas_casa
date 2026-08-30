@@ -93,6 +93,17 @@
       </form>
     {:else}
       <form method="POST" action="?/create" class="space-y-4">
+        <div class="space-y-1.5">
+          <label for="c_house" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nombre de la Casa / Hogar</label>
+          <input 
+            type="text" 
+            id="c_house" 
+            name="houseName" 
+            placeholder="Ej: Piso Centro, La Cabaña, Casa Familiar..." 
+            class="w-full bg-navy-surface px-5 py-4 rounded-2xl border border-white/5 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all font-medium"
+          />
+        </div>
+
         <div class="grid grid-cols-[1fr_4rem] gap-3">
           <div class="space-y-1.5">
             <label for="c_name" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Tu Nombre</label>

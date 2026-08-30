@@ -73,6 +73,7 @@ export const actions = {
 
   create: async ({ request, cookies }) => {
     const data = await request.formData();
+    const houseName = data.get('houseName')?.toString().trim();
     const name = data.get('name')?.toString().trim();
     const emoji = data.get('emoji')?.toString().trim() || '👑';
 
@@ -80,10 +81,12 @@ export const actions = {
       return fail(400, { error: 'Necesitas un nombre', name });
     }
 
+    const finalHouseName = houseName || `Casa de ${name}`;
+
     // Crear la casa
     const houseId = generateId();
     const joinCode = generateHouseCode();
-    await db.insert(houses).values({ id: houseId, code: joinCode, name: `Casa de ${name}` });
+    await db.insert(houses).values({ id: houseId, code: joinCode, name: finalHouseName });
 
     // Crear usuario
     const userId = generateId();
