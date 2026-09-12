@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trophy, Star, Check } from '@lucide/svelte';
+  import { Trophy, Star, Check, Plus } from '@lucide/svelte';
   import confetti from 'canvas-confetti';
   
   let { data } = $props();
@@ -42,7 +42,7 @@
   }
 </script>
 
-<div class="space-y-6 pb-6 fade-in relative h-full">
+<div class="space-y-6 pb-28 fade-in relative h-full">
   <!-- Cabecera -->
   <header class="flex items-center justify-between">
     <div>
@@ -93,14 +93,15 @@
 </div>
 
 <!-- FAB Añadir Recompensa (Fuera del div animado para no romper el fixed position) -->
-<div class="fixed bottom-24 left-0 w-full flex justify-center pointer-events-none z-50">
-  <div class="w-full max-w-md relative h-0">
+<div class="fixed bottom-[calc(env(safe-area-inset-bottom,16px)+5.5rem)] left-0 w-full flex justify-center pointer-events-none z-40">
+  <div class="w-full max-w-md relative flex justify-end px-6">
     <a 
       href="/store/new" 
-      class="absolute right-6 -top-6 w-14 h-14 bg-accent-orange text-navy-bg rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.4)] pointer-events-auto hover:bg-orange-400 transition-all hover:scale-110 active:scale-95 text-3xl font-light"
-      aria-label="Nueva recompensa"
+      class="w-14 h-14 bg-accent-orange text-navy-bg rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(249,115,22,0.4)] pointer-events-auto hover:bg-orange-400 transition-all hover:scale-110 active:scale-95"
+      aria-label="Añadir recompensa"
+      title="Añadir recompensa"
     >
-      +
+      <Plus size={28} strokeWidth={2.5} />
     </a>
   </div>
 </div>

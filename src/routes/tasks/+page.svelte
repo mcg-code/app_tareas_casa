@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ListTodo, CheckCircle2, Search, AlertTriangle, ThumbsUp, ThumbsDown, Users } from '@lucide/svelte';
+  import { ListTodo, CheckCircle2, Plus, AlertTriangle, ThumbsUp, ThumbsDown, Users } from '@lucide/svelte';
   import TaskCard from '$lib/components/TaskCard.svelte';
   import { invalidateAll } from '$app/navigation';
   import confetti from 'canvas-confetti';
@@ -98,7 +98,7 @@
   }
 </script>
 
-<div class="h-full w-full flex flex-col relative z-10 pt-4 pb-24">
+<div class="h-full w-full flex flex-col relative z-10 pt-4 pb-28">
   <header class="mb-6 px-1 flex justify-between items-center">
     <div>
       <h2 class="text-2xl font-bold flex items-center gap-2">
@@ -273,14 +273,15 @@
   </div>
 
   <!-- Botón Flotante Nueva Tarea -->
-  <div class="fixed bottom-24 left-0 w-full flex justify-center pointer-events-none z-50">
-    <div class="w-full max-w-md relative h-0">
+  <div class="fixed bottom-[calc(env(safe-area-inset-bottom,16px)+5.5rem)] left-0 w-full flex justify-center pointer-events-none z-40">
+    <div class="w-full max-w-md relative flex justify-end px-6">
       <a 
         href="/tasks/new" 
-        class="absolute right-6 -top-6 w-14 h-14 bg-accent-cyan text-navy-bg rounded-2xl flex items-center justify-center shadow-glow pointer-events-auto hover:bg-cyan-300 transition-all hover:scale-110 active:scale-95"
-        aria-label="Buscar en Catálogo"
+        class="w-14 h-14 bg-accent-cyan text-navy-bg rounded-2xl flex items-center justify-center shadow-glow pointer-events-auto hover:bg-cyan-300 transition-all hover:scale-110 active:scale-95"
+        aria-label="Añadir Tarea"
+        title="Añadir Tarea"
       >
-        <Search size={24} strokeWidth={2.5} />
+        <Plus size={28} strokeWidth={2.5} />
       </a>
     </div>
   </div>
