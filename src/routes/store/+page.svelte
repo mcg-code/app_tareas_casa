@@ -42,7 +42,7 @@
   }
 </script>
 
-<div class="space-y-6 pb-28 fade-in relative h-full">
+<div class="space-y-6 fade-in relative pt-2">
   <!-- Cabecera -->
   <header class="flex items-center justify-between">
     <div>

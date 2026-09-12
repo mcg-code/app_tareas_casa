@@ -47,9 +47,9 @@
   });
 </script>
 
-<div data-theme={activeTheme} class="min-h-screen max-w-md mx-auto relative bg-navy-bg shadow-2xl overflow-hidden pb-20 pt-safe text-gray-100 font-sans transition-colors duration-200">
+<div data-theme={activeTheme} class="min-h-screen max-w-md mx-auto relative bg-navy-bg shadow-2xl overflow-x-hidden pt-safe text-gray-100 font-sans transition-colors duration-200 flex flex-col">
   <!-- Contenido principal -->
-  <main class="h-full w-full overflow-y-auto p-4 { (data.user?.houseId && !$page.url.pathname.startsWith('/houses')) ? 'pb-24' : '' }">
+  <main class="w-full flex-1 p-4 { (data.user?.houseId && !$page.url.pathname.startsWith('/houses')) ? 'pb-28' : 'pb-8' }">
     {@render children()}
   </main>
 

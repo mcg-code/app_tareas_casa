@@ -163,7 +163,7 @@
   }
 </script>
 
-<div class="h-full w-full flex flex-col relative z-10 pt-4 pb-28">
+<div class="w-full flex flex-col relative z-10 pt-2">
   <header class="mb-6 px-1 flex justify-between items-center">
     <div>
       <h2 class="text-2xl font-bold flex items-center gap-2">
@@ -224,7 +224,7 @@
     </div>
   {/if}
 
-  <div class="flex-1 overflow-y-auto pr-1">
+  <div class="w-full">
     {#if activeTab === 'today'}
       <!-- SECCIÓN: TAREAS DE HOY -->
       {#if data.tasks.length === 0}

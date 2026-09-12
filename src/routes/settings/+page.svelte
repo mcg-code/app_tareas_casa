@@ -165,7 +165,7 @@
   }
 </script>
 
-<div class="h-full w-full flex flex-col relative z-10 pt-4 pb-28 max-w-md mx-auto fade-in">
+<div class="w-full flex flex-col relative z-10 pt-2 max-w-md mx-auto fade-in">
   <!-- Cabecera sin botón de menú principal / casas a la derecha -->
   <header class="mb-6 px-1 flex items-center gap-3">
     <a 

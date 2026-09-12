@@ -24,7 +24,7 @@
   }
 </script>
 
-<div class="space-y-6 pb-6 fade-in h-full">
+<div class="space-y-6 pb-6 fade-in pt-2">
   <header>
     <h2 class="text-2xl font-bold flex items-center gap-2">
       <span class="text-3xl">📜</span> Actividad

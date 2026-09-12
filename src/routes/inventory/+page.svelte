@@ -224,7 +224,7 @@
   }
 </script>
 
-<div class="h-full w-full flex flex-col relative z-10 pt-4 pb-28">
+<div class="w-full flex flex-col relative z-10 pt-2">
   <!-- Cabecera -->
   <header class="mb-5 px-1 flex justify-between items-center">
     <div>
@@ -280,8 +280,7 @@
     </button>
   </div>
 
-  <!-- Contenido de la Pantalla -->
-  <div class="flex-1 overflow-y-auto pr-1">
+  <div class="w-full">
     {#if activeTab === 'inventory'}
       <!-- VISTA INVENTARIO -->
       <div class="flex items-center justify-between gap-2 mb-4">
