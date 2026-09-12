@@ -144,5 +144,21 @@ export const handle: Handle = async ({ event, resolve }) => {
     event.locals.user = null;
   }
 
-  return resolve(event);
+  const houseTheme = event.locals.user?.settings?.theme || 'warm-peach';
+  const themeColors: Record<string, string> = {
+    'warm-peach': '#15100e',
+    'cyber-cyan': '#0f172a',
+    'forest-emerald': '#0b1510',
+    'lavender-night': '#130f1c',
+    'pure-black': '#000000'
+  };
+  const currentThemeColor = themeColors[houseTheme] || '#15100e';
+
+  return resolve(event, {
+    transformPageChunk: ({ html }) => {
+      return html
+        .replace('data-theme="warm-peach"', `data-theme="${houseTheme}"`)
+        .replace('content="#15100e" id="theme-color-meta"', `content="${currentThemeColor}" id="theme-color-meta"`);
+    }
+  });
 };

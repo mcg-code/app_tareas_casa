@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
 		<meta name="theme-color" content="#15100e" id="theme-color-meta" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 		<meta name="text-scale" content="scale" />
 		<title>Tareas en Familia</title>
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -13,22 +13,25 @@
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<script>
-			try {
-				const themeColors = {
-					'warm-peach': '#15100e',
-					'cyber-cyan': '#0f172a',
-					'forest-emerald': '#0b1510',
-					'lavender-night': '#130f1c',
-					'pure-black': '#000000'
-				};
-				const saved = localStorage.getItem('app_theme');
-				if (saved) {
-					document.documentElement.setAttribute('data-theme', saved);
-					const color = themeColors[saved] || '#15100e';
-					const metas = document.querySelectorAll('meta[name="theme-color"]');
-					metas.forEach(function(m) { m.setAttribute('content', color); });
-				}
-			} catch (e) {}
+			(function() {
+				try {
+					var themeColors = {
+						'warm-peach': '#15100e',
+						'cyber-cyan': '#0f172a',
+						'forest-emerald': '#0b1510',
+						'lavender-night': '#130f1c',
+						'pure-black': '#000000'
+					};
+					var saved = localStorage.getItem('app_theme');
+					if (saved) {
+						document.documentElement.setAttribute('data-theme', saved);
+						var color = themeColors[saved] || '#15100e';
+						document.documentElement.style.backgroundColor = color;
+						var meta = document.getElementById('theme-color-meta');
+						if (meta) meta.setAttribute('content', color);
+					}
+				} catch (e) {}
+			})();
 		</script>
 		%sveltekit.head%
 	</head>
