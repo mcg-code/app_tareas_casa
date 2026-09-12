@@ -990,7 +990,21 @@
         </div>
       {/if}
     {/if}
+  <!-- Botón Flotante Añadir Objeto / Compra -->
+  <div class="fixed bottom-[calc(env(safe-area-inset-bottom,16px)+5.5rem)] left-0 w-full flex justify-center pointer-events-none z-40">
+    <div class="w-full max-w-md relative flex justify-end px-6">
+      <button 
+        type="button"
+        onclick={() => openAddItemModal(activeTab)}
+        class="w-14 h-14 {activeTab === 'shopping' ? 'bg-accent-cyan text-navy-bg shadow-glow' : 'bg-amber-400 text-navy-bg shadow-[0_0_20px_rgba(251,191,36,0.35)]'} rounded-full flex items-center justify-center pointer-events-auto hover:opacity-90 transition-all hover:scale-105 active:scale-95"
+        aria-label={activeTab === 'shopping' ? 'Añadir a la lista de la compra' : 'Añadir al inventario'}
+        title={activeTab === 'shopping' ? 'Añadir a la lista de la compra' : 'Añadir al inventario'}
+      >
+        <Plus size={28} strokeWidth={2.5} />
+      </button>
+    </div>
   </div>
+</div>
 </div>
 
 <!-- Modal para Crear / Editar Cajones (Ubicaciones) -->
