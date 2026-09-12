@@ -205,16 +205,16 @@
 
   <!-- Pestañas (solo si la cuarentena está activa) -->
   {#if showQuarantine}
-    <div class="flex gap-2 p-1 bg-navy-surface rounded-xl border border-white/5 mb-6">
+    <div class="flex gap-1.5 p-1.5 bg-navy-surface rounded-2xl border border-white/5 mb-6 shadow-glass">
       <button 
         onclick={() => activeTab = 'today'}
-        class="flex-1 py-2 text-sm font-bold rounded-lg transition-all {activeTab === 'today' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}"
+        class="flex-1 py-2 text-xs font-bold rounded-xl transition-all {activeTab === 'today' ? 'bg-accent-cyan text-navy-bg shadow-sm' : 'text-gray-400 hover:text-white'}"
       >
         Para Hoy
       </button>
       <button 
         onclick={() => activeTab = 'quarantine'}
-        class="flex-1 py-2 text-sm font-bold rounded-lg transition-all relative {activeTab === 'quarantine' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}"
+        class="flex-1 py-2 text-xs font-bold rounded-xl transition-all relative {activeTab === 'quarantine' ? 'bg-accent-cyan text-navy-bg shadow-sm' : 'text-gray-400 hover:text-white'}"
       >
         En Cuarentena
         {#if data.quarantine.length > 0}
@@ -546,7 +546,7 @@
     <div class="w-full max-w-md relative flex justify-end px-6">
       <a 
         href="/tasks/new" 
-        class="w-14 h-14 bg-accent-cyan text-navy-bg rounded-2xl flex items-center justify-center shadow-glow pointer-events-auto hover:bg-cyan-300 transition-all hover:scale-110 active:scale-95"
+        class="w-14 h-14 bg-accent-cyan text-navy-bg rounded-full flex items-center justify-center shadow-glow pointer-events-auto hover:opacity-90 transition-all hover:scale-105 active:scale-95"
         aria-label="Añadir Tarea"
         title="Añadir Tarea"
       >

@@ -27,6 +27,7 @@ declare global {
 					enableInventory: boolean;
 					enableTaskCategories?: boolean;
 					enableInventoryLocations?: boolean;
+					theme?: string;
 				};
 			} | null;
 		}

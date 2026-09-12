@@ -1,17 +1,85 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+:root, [data-theme="warm-peach"] {
+  --theme-bg: #15100e;
+  --theme-surface: #241c19;
+  --theme-surface-active: #2e2420;
+  --theme-accent: #f29e8e;
+  --theme-accent-hover: #f7b2a4;
+  --theme-accent-contrast: #20120f;
+  --theme-accent-secondary: #e8c4bb;
+  --theme-shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.35);
+  --theme-shadow-glow: 0 0 20px rgba(242, 158, 142, 0.35);
+  --theme-border: rgba(242, 158, 142, 0.15);
+}
+
+[data-theme="cyber-cyan"] {
+  --theme-bg: #0f172a;
+  --theme-surface: #1e293b;
+  --theme-surface-active: #283548;
+  --theme-accent: #06b6d4;
+  --theme-accent-hover: #22d3ee;
+  --theme-accent-contrast: #0f172a;
+  --theme-accent-secondary: #f97316;
+  --theme-shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.15);
+  --theme-shadow-glow: 0 0 15px rgba(6, 182, 212, 0.5);
+  --theme-border: rgba(6, 182, 212, 0.2);
+}
+
+[data-theme="forest-emerald"] {
+  --theme-bg: #0b1510;
+  --theme-surface: #15241c;
+  --theme-surface-active: #1d3227;
+  --theme-accent: #34d399;
+  --theme-accent-hover: #6ee7b7;
+  --theme-accent-contrast: #062417;
+  --theme-accent-secondary: #a7f3d0;
+  --theme-shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.35);
+  --theme-shadow-glow: 0 0 20px rgba(52, 211, 153, 0.35);
+  --theme-border: rgba(52, 211, 153, 0.2);
+}
+
+[data-theme="lavender-night"] {
+  --theme-bg: #130f1c;
+  --theme-surface: #20182e;
+  --theme-surface-active: #2a203c;
+  --theme-accent: #c084fc;
+  --theme-accent-hover: #d8b4fe;
+  --theme-accent-contrast: #1d0f2f;
+  --theme-accent-secondary: #f472b6;
+  --theme-shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.35);
+  --theme-shadow-glow: 0 0 20px rgba(192, 132, 252, 0.35);
+  --theme-border: rgba(192, 132, 252, 0.2);
+}
+
+[data-theme="pure-black"] {
+  --theme-bg: #000000;
+  --theme-surface: #171717;
+  --theme-surface-active: #222222;
+  --theme-accent: #f4f4f5;
+  --theme-accent-hover: #ffffff;
+  --theme-accent-contrast: #000000;
+  --theme-accent-secondary: #a1a1aa;
+  --theme-shadow-glass: 0 4px 30px rgba(255, 255, 255, 0.05);
+  --theme-shadow-glow: 0 0 20px rgba(255, 255, 255, 0.2);
+  --theme-border: rgba(255, 255, 255, 0.15);
+}
 
 @theme {
-  --color-navy-bg: #0f172a;
-  --color-navy-surface: #1e293b;
-  --color-accent-cyan: #06b6d4;
-  --color-accent-orange: #f97316;
-  --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 15px rgba(6, 182, 212, 0.5);
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-navy-bg: var(--theme-bg, #15100e);
+  --color-navy-surface: var(--theme-surface, #241c19);
+  --color-accent-cyan: var(--theme-accent, #f29e8e);
+  --color-accent-orange: var(--theme-accent-secondary, #e8c4bb);
+  --shadow-glass: var(--theme-shadow-glass, 0 4px 30px rgba(0, 0, 0, 0.35));
+  --shadow-glow: var(--theme-shadow-glow, 0 0 20px rgba(242, 158, 142, 0.35));
 }
 
 @layer base {
   body {
-    @apply bg-navy-bg text-gray-100 font-sans antialiased selection:bg-accent-cyan selection:text-white;
+    @apply bg-navy-bg text-gray-100 font-sans antialiased selection:bg-accent-cyan selection:text-white transition-colors duration-200;
+    font-family: var(--font-sans);
   }
 }
 

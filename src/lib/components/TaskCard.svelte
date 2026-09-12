@@ -205,7 +205,7 @@
           </div>
 
           {#if assigneeCount > 1}
-            <span class="text-xs text-cyan-300 font-semibold bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+            <span class="text-xs text-accent-cyan font-semibold bg-accent-cyan/15 border border-accent-cyan/30 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
               <Users size={11} /> {pointsPerPerson} pts c/u
             </span>
           {/if}

@@ -52,7 +52,8 @@ export const handle: Handle = async ({ event, resolve }) => {
               enableDueDates: houseRecord.enableDueDates ?? false,
               enableInventory: houseRecord.enableInventory ?? false,
               enableTaskCategories: houseRecord.enableTaskCategories ?? true,
-              enableInventoryLocations: houseRecord.enableInventoryLocations ?? true
+              enableInventoryLocations: houseRecord.enableInventoryLocations ?? true,
+              theme: houseRecord.theme || 'warm-peach'
             }
           };
         } else {

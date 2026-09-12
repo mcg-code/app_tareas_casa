@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="es" data-theme="warm-peach">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-		<meta name="theme-color" content="#0f172a" />
+		<meta name="theme-color" content="#15100e" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="text-scale" content="scale" />
@@ -12,6 +12,12 @@
 		<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<link rel="manifest" href="/manifest.webmanifest" />
+		<script>
+			try {
+				const saved = localStorage.getItem('app_theme');
+				if (saved) document.documentElement.setAttribute('data-theme', saved);
+			} catch (e) {}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

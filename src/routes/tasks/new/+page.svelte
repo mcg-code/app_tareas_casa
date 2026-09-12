@@ -153,7 +153,7 @@
             <button 
               type="button" 
               onclick={() => openCreateModal()}
-              class="mt-4 inline-flex items-center gap-2 px-4 py-2.5 bg-accent-cyan text-navy-bg font-bold rounded-xl text-sm hover:bg-cyan-300 transition-all shadow-glass active:scale-95"
+              class="mt-4 inline-flex items-center gap-2 px-4 py-2.5 bg-accent-cyan text-navy-bg font-bold rounded-2xl text-sm hover:opacity-90 transition-all shadow-glow active:scale-95"
             >
               <Plus size={18} /> Proponer nueva tarea
             </button>
@@ -231,7 +231,7 @@
             <button 
               type="button" 
               onclick={() => openCreateModal(searchQuery)}
-              class="shrink-0 bg-accent-cyan text-navy-bg font-bold px-3.5 py-2 rounded-xl text-xs hover:bg-cyan-300 transition-all flex items-center gap-1.5 shadow-md active:scale-95"
+              class="shrink-0 bg-accent-cyan text-navy-bg font-bold px-3.5 py-2 rounded-xl text-xs hover:opacity-90 transition-all flex items-center gap-1.5 shadow-md active:scale-95"
             >
               <Plus size={16} /> Crear tarea
             </button>
@@ -295,7 +295,7 @@
         <input type="hidden" name="templateId" value={template.id} />
         <button 
           type="submit" 
-          class="h-9 px-3.5 rounded-xl bg-accent-cyan text-navy-bg font-bold text-xs hover:bg-cyan-300 transition-all flex items-center gap-1.5 shadow-md active:scale-95" 
+          class="h-9 px-3.5 rounded-xl bg-accent-cyan text-navy-bg font-bold text-xs hover:opacity-90 transition-all flex items-center gap-1.5 shadow-md active:scale-95" 
           title="Añadir a la jornada de Hoy"
         >
           <CalendarPlus size={15} />
@@ -464,7 +464,7 @@
           </button>
           <button 
             type="submit" 
-            class="flex-1 bg-accent-cyan hover:bg-cyan-300 text-navy-bg font-bold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)]"
+            class="flex-1 bg-accent-cyan hover:opacity-90 text-navy-bg font-bold py-3 rounded-xl transition-all shadow-glow"
           >
             Crear y Añadir a Hoy
           </button>
@@ -554,7 +554,7 @@
           
           <div class="flex gap-3 mt-2">
             <button type="button" onclick={() => editingTemplate = null} class="flex-1 py-3 font-bold text-gray-400 bg-navy-surface rounded-xl hover:text-white transition-colors">Cancelar</button>
-            <button type="submit" class="flex-1 py-3 font-bold bg-accent-cyan text-navy-bg rounded-xl shadow-[0_0_15px_rgba(34,211,238,0.3)] transition-all hover:bg-cyan-300">Guardar Cambios</button>
+            <button type="submit" class="flex-1 py-3 font-bold bg-accent-cyan text-navy-bg rounded-xl shadow-glow transition-all hover:opacity-90">Guardar Cambios</button>
           </div>
         </form>
       </div>

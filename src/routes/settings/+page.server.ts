@@ -38,12 +38,29 @@ export const load: PageServerLoad = async ({ locals }) => {
       enableDueDates: house.enableDueDates ?? false,
       enableInventory: house.enableInventory ?? false,
       enableTaskCategories: house.enableTaskCategories ?? true,
-      enableInventoryLocations: house.enableInventoryLocations ?? true
+      enableInventoryLocations: house.enableInventoryLocations ?? true,
+      theme: house.theme || 'warm-peach'
     }
   };
 };
 
 export const actions = {
+  setTheme: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403, { error: 'Solo el administrador puede cambiar el tema del espacio' });
+    
+    const data = await request.formData();
+    const theme = data.get('theme')?.toString() || 'warm-peach';
+
+    await db.update(houses).set({ theme }).where(eq(houses.id, locals.user.houseId));
+
+    if (locals.user && locals.user.settings) {
+      locals.user.settings.theme = theme;
+    }
+
+    return { success: true, theme };
+  },
+
   saveSettings: async ({ request, locals }) => {
     if (!locals.user || !locals.user.houseId) return fail(401);
     if (!locals.user.isAdmin) return fail(403, { error: 'Solo el administrador puede modificar los ajustes de la casa' });
@@ -58,6 +75,7 @@ export const actions = {
     const enableInventory = data.get('enableInventory') === 'on';
     const enableTaskCategories = data.get('enableTaskCategories') === 'on';
     const enableInventoryLocations = data.get('enableInventoryLocations') === 'on';
+    const theme = data.get('theme')?.toString() || 'warm-peach';
 
     await db.update(houses).set({
       enableStore,
@@ -67,7 +85,8 @@ export const actions = {
       enableDueDates,
       enableInventory,
       enableTaskCategories,
-      enableInventoryLocations
+      enableInventoryLocations,
+      theme
     }).where(eq(houses.id, houseId));
 
     if (locals.user) {
@@ -79,7 +98,8 @@ export const actions = {
         enableDueDates,
         enableInventory,
         enableTaskCategories,
-        enableInventoryLocations
+        enableInventoryLocations,
+        theme
       };
     }
 
@@ -93,7 +113,8 @@ export const actions = {
         enableDueDates,
         enableInventory,
         enableTaskCategories,
-        enableInventoryLocations
+        enableInventoryLocations,
+        theme
       }
     };
   },

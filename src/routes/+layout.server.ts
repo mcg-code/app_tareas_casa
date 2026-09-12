@@ -28,7 +28,8 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
         enableDueDates: house.enableDueDates ?? false,
         enableInventory: house.enableInventory ?? false,
         enableTaskCategories: house.enableTaskCategories ?? true,
-        enableInventoryLocations: house.enableInventoryLocations ?? true
+        enableInventoryLocations: house.enableInventoryLocations ?? true,
+        theme: house.theme || 'warm-peach'
       };
     }
   }

@@ -258,22 +258,22 @@
   </header>
 
   <!-- Pestañas Principales: Inventario vs Lista de la Compra -->
-  <div class="flex gap-2 p-1.5 bg-navy-surface rounded-2xl border border-white/5 mb-5 shadow-glass">
+  <div class="flex gap-1.5 p-1.5 bg-navy-surface rounded-2xl border border-white/5 mb-5 shadow-glass">
     <button 
       onclick={() => activeTab = 'inventory'}
-      class="flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 {activeTab === 'inventory' ? 'bg-amber-400/15 text-amber-400 border border-amber-400/30' : 'text-gray-400 hover:text-gray-200'}"
+      class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 {activeTab === 'inventory' ? 'bg-accent-cyan text-navy-bg shadow-sm' : 'text-gray-400 hover:text-white'}"
     >
       <Boxes size={16} />
       <span>Inventario ({data.items.length})</span>
     </button>
     <button 
       onclick={() => activeTab = 'shopping'}
-      class="flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 relative {activeTab === 'shopping' ? 'bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/30' : 'text-gray-400 hover:text-gray-200'}"
+      class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 relative {activeTab === 'shopping' ? 'bg-accent-cyan text-navy-bg shadow-sm' : 'text-gray-400 hover:text-white'}"
     >
       <ShoppingCart size={16} />
       <span>Lista Compra</span>
       {#if pendingShoppingItems.length > 0}
-        <span class="px-1.5 py-0.2 bg-accent-cyan text-navy-bg rounded-full text-[10px] font-black">
+        <span class="px-1.5 py-0.2 rounded-full text-[10px] font-black {activeTab === 'shopping' ? 'bg-navy-bg text-accent-cyan' : 'bg-accent-cyan text-navy-bg'}">
           {pendingShoppingItems.length}
         </span>
       {/if}

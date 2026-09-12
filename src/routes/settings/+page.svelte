@@ -1,10 +1,11 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
-  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock, Package, Plus, Trash2, Edit2, X, Boxes, PackagePlus } from '@lucide/svelte';
+  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock, Package, Plus, Trash2, Edit2, X, Boxes, PackagePlus, Palette } from '@lucide/svelte';
   
   let { data, form } = $props();
 
+  let currentTheme = $state(data.settings?.theme || 'warm-peach');
   let storeActive = $state(data.settings?.enableStore ?? true);
   let feedActive = $state(data.settings?.enableFeed ?? true);
   let pointsActive = $state(data.settings?.enablePoints ?? true);
@@ -15,6 +16,65 @@
   let inventoryLocationsActive = $state(data.settings?.enableInventoryLocations ?? true);
   let showSavedNotification = $state(false);
   let isSaving = $state(false);
+
+  const themes = [
+    {
+      id: 'warm-peach',
+      name: 'Melocotón Cálido',
+      subtitle: 'Estilo foto: café espresso & salmón pastel',
+      icon: '🍑',
+      bg: '#15100e',
+      surface: '#241c19',
+      accent: '#f29e8e'
+    },
+    {
+      id: 'cyber-cyan',
+      name: 'Azul Neón',
+      subtitle: 'Clásico: azul medianoche & cian eléctrico',
+      icon: '🌌',
+      bg: '#0f172a',
+      surface: '#1e293b',
+      accent: '#06b6d4'
+    },
+    {
+      id: 'forest-emerald',
+      name: 'Bosque Esmeralda',
+      subtitle: 'Naturaleza: verde bosque & menta fresca',
+      icon: '🌲',
+      bg: '#0b1510',
+      surface: '#15241c',
+      accent: '#34d399'
+    },
+    {
+      id: 'lavender-night',
+      name: 'Lavanda & Noche',
+      subtitle: 'Místico: púrpura noche & lila brillante',
+      icon: '🔮',
+      bg: '#130f1c',
+      surface: '#20182e',
+      accent: '#c084fc'
+    },
+    {
+      id: 'pure-black',
+      name: 'OLED Minimalista',
+      subtitle: 'Monocromo: negro puro & blanco titanio',
+      icon: '🖤',
+      bg: '#000000',
+      surface: '#171717',
+      accent: '#f4f4f5'
+    }
+  ];
+
+  function selectTheme(themeId: string) {
+    currentTheme = themeId;
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', themeId);
+      try {
+        localStorage.setItem('app_theme', themeId);
+      } catch (e) {}
+    }
+    triggerAutoSave();
+  }
 
   let newCategoryName = $state('');
   let newCategoryIcon = $state('🏠');
@@ -68,6 +128,7 @@
       inventoryActive = data.settings.enableInventory ?? false;
       taskCategoriesActive = data.settings.enableTaskCategories ?? true;
       inventoryLocationsActive = data.settings.enableInventoryLocations ?? true;
+      currentTheme = data.settings.theme || 'warm-peach';
     }
   });
 
@@ -134,6 +195,72 @@
     }}
     class="space-y-3"
   >
+    <!-- SECCIÓN: APARIENCIA Y TEMAS DE LA APP -->
+    <div class="bg-navy-surface p-4 rounded-3xl border border-white/10 shadow-glass space-y-3 mb-2">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2 rounded-2xl bg-accent-cyan/15 text-accent-cyan">
+            <Palette size={20} />
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <span>Tema y Estilo Visual</span>
+            </h3>
+            <p class="text-[11px] text-gray-400">Elige la combinación de colores para toda la app</p>
+          </div>
+        </div>
+      </div>
+
+      <input type="hidden" name="theme" value={currentTheme} />
+
+      <div class="grid grid-cols-1 gap-2 pt-1">
+        {#each themes as th}
+          <button 
+            type="button"
+            onclick={() => selectTheme(th.id)}
+            class="flex items-center justify-between p-3 rounded-2xl border text-left transition-all relative overflow-hidden group {currentTheme === th.id ? 'border-accent-cyan bg-accent-cyan/10 shadow-[0_0_15px_rgba(242,158,142,0.2)]' : 'border-white/5 bg-navy-bg/50 hover:border-white/15'}"
+          >
+            <div class="flex items-center gap-3 min-w-0">
+              <!-- Muestra en miniatura con los colores del tema -->
+              <div 
+                class="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 shadow-inner border border-white/10 transition-transform group-hover:scale-105" 
+                style="background-color: {th.bg};"
+              >
+                <span>{th.icon}</span>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-xs text-white truncate">{th.name}</span>
+                  {#if th.id === 'warm-peach'}
+                    <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-accent-cyan text-navy-bg tracking-wide shrink-0">
+                      Foto
+                    </span>
+                  {/if}
+                </div>
+                <p class="text-[10px] text-gray-400 truncate mt-0.5">{th.subtitle}</p>
+              </div>
+            </div>
+
+            <!-- Previsualización de paleta / pill -->
+            <div class="flex items-center gap-2 shrink-0 pl-2">
+              <div 
+                class="w-4 h-4 rounded-full border border-white/20 shadow-sm" 
+                style="background-color: {th.accent};" 
+                title="Color de acento: {th.accent}"
+              ></div>
+              {#if currentTheme === th.id}
+                <div class="w-5 h-5 rounded-full bg-accent-cyan text-navy-bg flex items-center justify-center font-bold shadow-sm animate-in zoom-in-75">
+                  <Check size={12} strokeWidth={3} />
+                </div>
+              {:else}
+                <div class="w-5 h-5 rounded-full border border-white/10 flex items-center justify-center opacity-40"></div>
+              {/if}
+            </div>
+          </button>
+        {/each}
+      </div>
+    </div>
+
     <!-- Tienda de Recompensas -->
     <label class="block cursor-pointer bg-navy-surface p-4 rounded-2xl border transition-all {storeActive ? 'border-accent-orange/40 bg-navy-surface/90' : 'border-white/5 opacity-70'} hover:border-white/20">
       <div class="flex items-start justify-between gap-3">
@@ -348,7 +475,7 @@
       <button 
         type="submit" 
         disabled={isSaving}
-        class="w-full py-3.5 bg-accent-cyan hover:bg-cyan-400 disabled:opacity-60 text-navy-bg font-bold text-sm rounded-xl transition-all shadow-glow flex items-center justify-center gap-2"
+        class="w-full py-3.5 bg-accent-cyan hover:opacity-90 disabled:opacity-60 text-navy-bg font-bold text-sm rounded-2xl transition-all shadow-glow flex items-center justify-center gap-2"
       >
         {#if isSaving}
           <Loader2 size={18} class="animate-spin" /> Guardando cambios...

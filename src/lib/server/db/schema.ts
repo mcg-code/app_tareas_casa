@@ -19,7 +19,8 @@ export const houses = sqliteTable('houses', {
   enableDueDates: integer('enable_due_dates', { mode: 'boolean' }).default(false),
   enableInventory: integer('enable_inventory', { mode: 'boolean' }).default(false),
   enableTaskCategories: integer('enable_task_categories', { mode: 'boolean' }).default(true),
-  enableInventoryLocations: integer('enable_inventory_locations', { mode: 'boolean' }).default(true)
+  enableInventoryLocations: integer('enable_inventory_locations', { mode: 'boolean' }).default(true),
+  theme: text('theme').default('warm-peach')
 });
 
 export const houseMembers = sqliteTable('house_members', {
