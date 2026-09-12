@@ -591,194 +591,210 @@
 
 <!-- Modal para Crear / Editar Cajones (Ubicaciones) -->
 {#if showLocationModal}
-  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onclick={() => showLocationModal = false}>
-    <div class="bg-navy-bg border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 space-y-5 max-h-[90vh] overflow-y-auto" onclick={(e) => e.stopPropagation()}>
-      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in" onclick={() => showLocationModal = false}>
+    <div class="bg-navy-bg border border-white/15 w-full max-w-lg rounded-3xl shadow-2xl animate-in zoom-in-95 flex flex-col h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden" onclick={(e) => e.stopPropagation()}>
+      
+      <!-- Cabecera Fija -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-navy-surface/40">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
           <span>🧊</span> Cajones y Ubicaciones
         </h3>
-        <button type="button" onclick={() => showLocationModal = false} class="text-gray-400 hover:text-white p-1 rounded-lg">
+        <button type="button" onclick={() => showLocationModal = false} class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-white/5 transition-colors">
           <X size={20} />
         </button>
       </div>
 
-      <p class="text-xs text-gray-400 leading-relaxed">
-        Organiza las provisiones en diferentes sitios (ej: <em>Congelador</em>, <em>Nevera</em>, <em>Despensa</em>, <em>Cajón de oficina</em>).
-      </p>
+      <!-- Contenido scrolleable completo -->
+      <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 overscroll-contain">
+        <p class="text-xs text-gray-400 leading-relaxed">
+          Organiza las provisiones en diferentes sitios (ej: <em>Congelador</em>, <em>Nevera</em>, <em>Despensa</em>, <em>Cajón de oficina</em>).
+        </p>
 
-      <!-- Formulario Nuevo Cajón -->
-      <form onsubmit={handleCreateLocation} class="space-y-3 bg-navy-surface/60 p-4 rounded-2xl border border-white/5">
-        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider">+ Nuevo Cajón</h4>
-        <div class="space-y-1">
-          <label class="text-[11px] text-gray-400">Nombre del cajón</label>
-          <input 
-            type="text" 
-            bind:value={newLocationName}
-            placeholder="Ej: Congelador, Nevera, Despensa..." 
-            class="w-full px-3 py-2.5 rounded-xl bg-navy-bg border border-white/10 text-white text-sm outline-none focus:border-amber-400"
-            required
-          />
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="text-[11px] text-gray-400">Icono / Emoji</label>
-          <div class="flex flex-wrap gap-2">
-            {#each popularLocationEmojis as em}
-              <button 
-                type="button" 
-                onclick={() => newLocationIcon = em}
-                class="w-9 h-9 rounded-xl flex items-center justify-center text-lg border transition-all {newLocationIcon === em ? 'bg-amber-400/20 border-amber-400 scale-110' : 'bg-navy-bg border-white/5 hover:bg-white/5'}"
-              >
-                {em}
-              </button>
-            {/each}
+        <!-- Formulario Nuevo Cajón -->
+        <form onsubmit={handleCreateLocation} class="space-y-3.5 bg-navy-surface/60 p-4 rounded-2xl border border-white/5 shadow-inner">
+          <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+            <Plus size={14} /> Nuevo Cajón
+          </h4>
+          
+          <div class="space-y-1">
+            <label class="text-[11px] text-gray-400">Nombre del cajón</label>
+            <input 
+              type="text" 
+              bind:value={newLocationName}
+              placeholder="Ej: Congelador, Nevera, Despensa..." 
+              class="w-full px-3.5 py-2.5 rounded-xl bg-navy-bg border border-white/10 text-white text-sm outline-none focus:border-amber-400"
+              required
+            />
           </div>
-        </div>
 
-        <button 
-          type="submit" 
-          class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
-        >
-          <Plus size={15} /> Crear Cajón
-        </button>
-      </form>
-
-      <!-- Lista de Cajones Existentes -->
-      {#if data.locations.length > 0}
-        <div class="space-y-2 pt-2">
-          <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Cajones actuales ({data.locations.length})</h4>
-          <div class="space-y-2">
-            {#each data.locations as loc}
-              <div class="flex items-center justify-between p-3 rounded-xl bg-navy-surface border border-white/5">
-                {#if editingLocationId === loc.id}
-                  <form onsubmit={handleUpdateLocation} class="flex items-center gap-2 flex-1">
-                    <input type="text" bind:value={editLocationIcon} class="w-10 px-1 py-1.5 text-center bg-navy-bg border border-white/10 rounded-lg text-sm" />
-                    <input type="text" bind:value={editLocationName} class="flex-1 px-3 py-1.5 bg-navy-bg border border-white/10 rounded-lg text-sm text-white" required />
-                    <button type="submit" class="p-2 text-amber-400 hover:bg-amber-400/10 rounded-lg">
-                      <Check size={16} />
-                    </button>
-                    <button type="button" onclick={() => editingLocationId = null} class="p-2 text-gray-400 hover:bg-white/5 rounded-lg">
-                      <X size={16} />
-                    </button>
-                  </form>
-                {:else}
-                  <div class="flex items-center gap-2.5">
-                    <span class="text-xl">{loc.icon || '🧊'}</span>
-                    <span class="font-bold text-white text-sm">{loc.name}</span>
-                  </div>
-
-                  <div class="flex items-center gap-1">
-                    <button 
-                      type="button" 
-                      onclick={() => { editingLocationId = loc.id; editLocationName = loc.name; editLocationIcon = loc.icon || '🧊'; }}
-                      class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
-                      title="Editar nombre"
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    <button 
-                      type="button" 
-                      onclick={() => handleDeleteLocation(loc.id)}
-                      class="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
-                      title="Eliminar cajón"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                {/if}
-              </div>
-            {/each}
+          <div class="space-y-1.5">
+            <label class="text-[11px] text-gray-400">Icono / Emoji</label>
+            <div class="flex flex-wrap gap-1.5">
+              {#each popularLocationEmojis as em}
+                <button 
+                  type="button" 
+                  onclick={() => newLocationIcon = em}
+                  class="w-8 h-8 rounded-lg flex items-center justify-center text-base border transition-all {newLocationIcon === em ? 'bg-amber-400/20 border-amber-400 scale-110 shadow-sm' : 'bg-navy-bg border-white/5 hover:bg-white/5'}"
+                >
+                  {em}
+                </button>
+              {/each}
+            </div>
           </div>
-        </div>
-      {/if}
+
+          <button 
+            type="submit" 
+            class="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
+          >
+            <Plus size={15} /> Crear Cajón
+          </button>
+        </form>
+
+        <!-- Lista de Cajones Existentes -->
+        {#if data.locations.length > 0}
+          <div class="space-y-2.5 pt-1 pb-8">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Cajones actuales ({data.locations.length})</h4>
+              <span class="text-[11px] text-gray-400">Desplaza abajo para ver todos</span>
+            </div>
+            <div class="space-y-2">
+              {#each data.locations as loc}
+                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-navy-surface border border-white/5 shadow-glass">
+                  {#if editingLocationId === loc.id}
+                    <form onsubmit={handleUpdateLocation} class="flex items-center gap-2 flex-1">
+                      <input type="text" bind:value={editLocationIcon} class="w-10 px-1 py-1.5 text-center bg-navy-bg border border-white/10 rounded-lg text-sm" />
+                      <input type="text" bind:value={editLocationName} class="flex-1 px-3 py-1.5 bg-navy-bg border border-white/10 rounded-lg text-sm text-white" required />
+                      <button type="submit" class="p-2 text-amber-400 hover:bg-amber-400/10 rounded-lg">
+                        <Check size={16} />
+                      </button>
+                      <button type="button" onclick={() => editingLocationId = null} class="p-2 text-gray-400 hover:bg-white/5 rounded-lg">
+                        <X size={16} />
+                      </button>
+                    </form>
+                  {:else}
+                    <div class="flex items-center gap-2.5">
+                      <span class="text-2xl">{loc.icon || '🧊'}</span>
+                      <span class="font-bold text-white text-sm">{loc.name}</span>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <button 
+                        type="button" 
+                        onclick={() => { editingLocationId = loc.id; editLocationName = loc.name; editLocationIcon = loc.icon || '🧊'; }}
+                        class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                        title="Editar nombre"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button 
+                        type="button" 
+                        onclick={() => handleDeleteLocation(loc.id)}
+                        class="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                        title="Eliminar cajón"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 {/if}
 
 <!-- Modal para Añadir Nuevo Objeto al Catálogo -->
 {#if showItemModal}
-  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onclick={() => showItemModal = false}>
-    <div class="bg-navy-bg border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 space-y-4" onclick={(e) => e.stopPropagation()}>
-      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in" onclick={() => showItemModal = false}>
+    <div class="bg-navy-bg border border-white/15 w-full max-w-lg rounded-3xl shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh] overflow-hidden" onclick={(e) => e.stopPropagation()}>
+      
+      <!-- Cabecera Fija -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-navy-surface/40">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
           <span>📦</span> {newItemTarget === 'inventory' ? 'Añadir al Inventario' : 'Añadir a la Compra'}
         </h3>
-        <button type="button" onclick={() => showItemModal = false} class="text-gray-400 hover:text-white p-1 rounded-lg">
+        <button type="button" onclick={() => showItemModal = false} class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-white/5 transition-colors">
           <X size={20} />
         </button>
       </div>
 
-      <form onsubmit={handleCreateItem} class="space-y-3.5">
-        <div class="space-y-1">
-          <label class="text-[11px] text-gray-400">Nombre del objeto o producto</label>
-          <input 
-            type="text" 
-            bind:value={newItemName}
-            placeholder="Ej: Leche desnatada, Cuaderno, Pizza..." 
-            class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none focus:border-amber-400 font-medium"
-            required
-          />
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="text-[11px] text-gray-400">Emoji / Icono</label>
-          <div class="flex flex-wrap gap-2">
-            {#each popularItemEmojis as em}
-              <button 
-                type="button" 
-                onclick={() => newItemIcon = em}
-                class="w-8 h-8 rounded-xl flex items-center justify-center text-base border transition-all {newItemIcon === em ? 'bg-amber-400/20 border-amber-400 scale-110' : 'bg-navy-surface border-white/5 hover:bg-white/5'}"
-              >
-                {em}
-              </button>
-            {/each}
-          </div>
-        </div>
-
-        {#if data.locations.length > 0}
+      <!-- Formulario scrolleable -->
+      <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 overscroll-contain">
+        <form onsubmit={handleCreateItem} class="space-y-4">
           <div class="space-y-1">
-            <label class="text-[11px] text-gray-400">Cajón habitual</label>
-            <select 
-              bind:value={newItemLocationId}
-              class="w-full px-3 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
-            >
-              <option value="none">General (Sin cajón)</option>
-              {#each data.locations as loc}
-                <option value={loc.id}>{loc.icon || '🧊'} {loc.name}</option>
-              {/each}
-            </select>
-          </div>
-        {/if}
-
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-1">
-            <label class="text-[11px] text-gray-400">Cantidad</label>
-            <input 
-              type="number" 
-              bind:value={newItemQuantity}
-              min="1"
-              max="999"
-              class="w-full px-3 py-2 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
-            />
-          </div>
-          <div class="space-y-1">
-            <label class="text-[11px] text-gray-400">Unidad</label>
+            <label class="text-[11px] text-gray-400">Nombre del objeto o producto</label>
             <input 
               type="text" 
-              bind:value={newItemUnit}
-              placeholder="uds, kg, L, paq"
-              class="w-full px-3 py-2 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
+              bind:value={newItemName}
+              placeholder="Ej: Leche desnatada, Cuaderno, Pizza..." 
+              class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none focus:border-amber-400 font-medium"
+              required
             />
           </div>
-        </div>
 
-        <button 
-          type="submit" 
-          class="w-full py-3 bg-amber-400 hover:bg-amber-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5 mt-2"
-        >
-          <Plus size={16} /> Guardar Objeto
-        </button>
-      </form>
+          <div class="space-y-1.5">
+            <label class="text-[11px] text-gray-400">Emoji / Icono</label>
+            <div class="flex flex-wrap gap-1.5">
+              {#each popularItemEmojis as em}
+                <button 
+                  type="button" 
+                  onclick={() => newItemIcon = em}
+                  class="w-8 h-8 rounded-lg flex items-center justify-center text-base border transition-all {newItemIcon === em ? 'bg-amber-400/20 border-amber-400 scale-110' : 'bg-navy-surface border-white/5 hover:bg-white/5'}"
+                >
+                  {em}
+                </button>
+              {/each}
+            </div>
+          </div>
+
+          {#if data.locations.length > 0}
+            <div class="space-y-1">
+              <label class="text-[11px] text-gray-400">Cajón habitual</label>
+              <select 
+                bind:value={newItemLocationId}
+                class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
+              >
+                <option value="none">General (Sin cajón)</option>
+                {#each data.locations as loc}
+                  <option value={loc.id}>{loc.icon || '🧊'} {loc.name}</option>
+                {/each}
+              </select>
+            </div>
+          {/if}
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-[11px] text-gray-400">Cantidad</label>
+              <input 
+                type="number" 
+                bind:value={newItemQuantity}
+                min="1"
+                max="999"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
+              />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[11px] text-gray-400">Unidad</label>
+              <input 
+                type="text" 
+                bind:value={newItemUnit}
+                placeholder="uds, kg, L, paq"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            class="w-full py-3 bg-amber-400 hover:bg-amber-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5 mt-2"
+          >
+            <Plus size={16} /> Guardar Objeto
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 {/if}

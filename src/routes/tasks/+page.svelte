@@ -556,107 +556,117 @@
 
 <!-- Modal para Administrar Cajas de Tareas -->
 {#if showCategoryManagerModal}
-  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onclick={() => showCategoryManagerModal = false}>
-    <div class="bg-navy-bg border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 space-y-5 max-h-[90vh] overflow-y-auto" onclick={(e) => e.stopPropagation()}>
-      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in" onclick={() => showCategoryManagerModal = false}>
+    <div class="bg-navy-bg border border-white/15 w-full max-w-lg rounded-3xl shadow-2xl animate-in zoom-in-95 flex flex-col h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden" onclick={(e) => e.stopPropagation()}>
+      
+      <!-- Cabecera Fija -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-navy-surface/40">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
           <span>📦</span> Organizar Cajas de Tareas
         </h3>
-        <button type="button" onclick={() => showCategoryManagerModal = false} class="text-gray-400 hover:text-white p-1 rounded-lg">
+        <button type="button" onclick={() => showCategoryManagerModal = false} class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-white/5 transition-colors">
           <X size={20} />
         </button>
       </div>
 
-      <p class="text-xs text-gray-400 leading-relaxed">
-        Las cajas dividen la lista de tareas en secciones temáticas (ej: <em>En casa</em>, <em>Compras</em>, <em>Equipaje</em>, <em>Campamento</em>).
-      </p>
+      <!-- Contenido scrolleable completo -->
+      <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 overscroll-contain">
+        <p class="text-xs text-gray-400 leading-relaxed">
+          Las cajas dividen la lista de tareas en secciones temáticas (ej: <em>En casa</em>, <em>Compras</em>, <em>Equipaje</em>, <em>Campamento</em>).
+        </p>
 
-      <!-- Formulario para Crear Nueva Caja -->
-      <form onsubmit={handleCreateBox} class="space-y-3 bg-navy-surface/60 p-4 rounded-2xl border border-white/5">
-        <h4 class="text-xs font-bold text-accent-cyan uppercase tracking-wider">+ Nueva Caja</h4>
-        
-        <div class="space-y-1">
-          <label class="text-[11px] text-gray-400">Nombre de la caja</label>
-          <input 
-            type="text" 
-            bind:value={newCategoryName} 
-            placeholder="Ej: En casa, Compras, Equipaje..." 
-            class="w-full px-3 py-2.5 rounded-xl bg-navy-bg border border-white/10 text-white text-sm outline-none focus:border-accent-cyan"
-            required
-          />
-        </div>
-
-        <div class="space-y-1.5">
-          <label class="text-[11px] text-gray-400">Elige un emoji</label>
-          <div class="flex flex-wrap gap-2">
-            {#each popularEmojis as em}
-              <button 
-                type="button" 
-                onclick={() => newCategoryIcon = em}
-                class="w-9 h-9 rounded-xl flex items-center justify-center text-lg border transition-all {newCategoryIcon === em ? 'bg-accent-cyan/20 border-accent-cyan scale-110' : 'bg-navy-bg border-white/5 hover:bg-white/5'}"
-              >
-                {em}
-              </button>
-            {/each}
+        <!-- Formulario para Crear Nueva Caja -->
+        <form onsubmit={handleCreateBox} class="space-y-3.5 bg-navy-surface/60 p-4 rounded-2xl border border-white/5 shadow-inner">
+          <h4 class="text-xs font-bold text-accent-cyan uppercase tracking-wider flex items-center gap-1.5">
+            <Plus size={14} /> Nueva Caja
+          </h4>
+          
+          <div class="space-y-1">
+            <label class="text-[11px] text-gray-400">Nombre de la caja</label>
+            <input 
+              type="text" 
+              bind:value={newCategoryName} 
+              placeholder="Ej: En casa, Compras, Equipaje..." 
+              class="w-full px-3.5 py-2.5 rounded-xl bg-navy-bg border border-white/10 text-white text-sm outline-none focus:border-accent-cyan"
+              required
+            />
           </div>
-        </div>
 
-        <button 
-          type="submit" 
-          class="w-full py-2.5 bg-accent-cyan hover:bg-cyan-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
-        >
-          <Plus size={15} /> Crear Caja
-        </button>
-      </form>
-
-      <!-- Lista de Cajas Existentes -->
-      {#if data.categories && data.categories.length > 0}
-        <div class="space-y-2 pt-2">
-          <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Cajas actuales ({data.categories.length})</h4>
-          <div class="space-y-2">
-            {#each data.categories as cat}
-              <div class="flex items-center justify-between p-3 rounded-xl bg-navy-surface border border-white/5">
-                {#if editingCategoryId === cat.id}
-                  <form onsubmit={handleUpdateBox} class="flex items-center gap-2 flex-1">
-                    <input type="text" bind:value={editCategoryIcon} class="w-10 px-1 py-1.5 text-center bg-navy-bg border border-white/10 rounded-lg text-sm" />
-                    <input type="text" bind:value={editCategoryName} class="flex-1 px-3 py-1.5 bg-navy-bg border border-white/10 rounded-lg text-sm text-white" required />
-                    <button type="submit" class="p-2 text-accent-cyan hover:bg-accent-cyan/10 rounded-lg">
-                      <Check size={16} />
-                    </button>
-                    <button type="button" onclick={() => editingCategoryId = null} class="p-2 text-gray-400 hover:bg-white/5 rounded-lg">
-                      <X size={16} />
-                    </button>
-                  </form>
-                {:else}
-                  <div class="flex items-center gap-2.5">
-                    <span class="text-xl">{cat.icon || '📦'}</span>
-                    <span class="font-bold text-white text-sm">{cat.name}</span>
-                  </div>
-
-                  <div class="flex items-center gap-1">
-                    <button 
-                      type="button" 
-                      onclick={() => { editingCategoryId = cat.id; editCategoryName = cat.name; editCategoryIcon = cat.icon || '📦'; }}
-                      class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
-                      title="Editar nombre"
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    <button 
-                      type="button" 
-                      onclick={() => handleDeleteBox(cat.id)}
-                      class="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
-                      title="Eliminar caja"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                {/if}
-              </div>
-            {/each}
+          <div class="space-y-1.5">
+            <label class="text-[11px] text-gray-400">Elige un emoji</label>
+            <div class="flex flex-wrap gap-1.5">
+              {#each popularEmojis as em}
+                <button 
+                  type="button" 
+                  onclick={() => newCategoryIcon = em}
+                  class="w-8 h-8 rounded-lg flex items-center justify-center text-base border transition-all {newCategoryIcon === em ? 'bg-accent-cyan/20 border-accent-cyan scale-110 shadow-sm' : 'bg-navy-bg border-white/5 hover:bg-white/5'}"
+                >
+                  {em}
+                </button>
+              {/each}
+            </div>
           </div>
-        </div>
-      {/if}
+
+          <button 
+            type="submit" 
+            class="w-full py-2.5 bg-accent-cyan hover:bg-cyan-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
+          >
+            <Plus size={15} /> Crear Caja
+          </button>
+        </form>
+
+        <!-- Lista de Cajas Existentes -->
+        {#if data.categories && data.categories.length > 0}
+          <div class="space-y-2.5 pt-1 pb-8">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-gray-300 uppercase tracking-wider">Cajas actuales ({data.categories.length})</h4>
+              <span class="text-[11px] text-gray-400">Desplaza abajo para ver todas</span>
+            </div>
+            <div class="space-y-2">
+              {#each data.categories as cat}
+                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-navy-surface border border-white/5 shadow-glass">
+                  {#if editingCategoryId === cat.id}
+                    <form onsubmit={handleUpdateBox} class="flex items-center gap-2 flex-1">
+                      <input type="text" bind:value={editCategoryIcon} class="w-10 px-1 py-1.5 text-center bg-navy-bg border border-white/10 rounded-lg text-sm" />
+                      <input type="text" bind:value={editCategoryName} class="flex-1 px-3 py-1.5 bg-navy-bg border border-white/10 rounded-lg text-sm text-white" required />
+                      <button type="submit" class="p-2 text-accent-cyan hover:bg-accent-cyan/10 rounded-lg">
+                        <Check size={16} />
+                      </button>
+                      <button type="button" onclick={() => editingCategoryId = null} class="p-2 text-gray-400 hover:bg-white/5 rounded-lg">
+                        <X size={16} />
+                      </button>
+                    </form>
+                  {:else}
+                    <div class="flex items-center gap-2.5">
+                      <span class="text-2xl">{cat.icon || '📦'}</span>
+                      <span class="font-bold text-white text-sm">{cat.name}</span>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <button 
+                        type="button" 
+                        onclick={() => { editingCategoryId = cat.id; editCategoryName = cat.name; editCategoryIcon = cat.icon || '📦'; }}
+                        class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                        title="Editar nombre"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button 
+                        type="button" 
+                        onclick={() => handleDeleteBox(cat.id)}
+                        class="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                        title="Eliminar caja"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 {/if}

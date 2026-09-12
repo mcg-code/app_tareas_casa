@@ -517,49 +517,54 @@
 
 <!-- Modal para Mover de Caja/Categoría -->
 {#if showCategoryModal && categories && categories.length > 0}
-  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onclick={() => showCategoryModal = false}>
-    <div class="bg-navy-bg border border-white/10 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 space-y-4" onclick={(e) => e.stopPropagation()}>
-      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in" onclick={() => showCategoryModal = false}>
+    <div class="bg-navy-bg border border-white/15 w-full max-w-md rounded-3xl shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[85vh] overflow-hidden" onclick={(e) => e.stopPropagation()}>
+      
+      <!-- Cabecera Fija -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-navy-surface/40">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
           <span>📦</span> Mover de Caja
         </h3>
-        <button type="button" onclick={() => showCategoryModal = false} class="text-gray-400 hover:text-white p-1 rounded-lg">
+        <button type="button" onclick={() => showCategoryModal = false} class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-white/5 transition-colors">
           <X size={18} />
         </button>
       </div>
 
-      <p class="text-xs text-gray-400">Selecciona la caja en la que quieres organizar esta tarea:</p>
+      <!-- Contenido scrolleable -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-4 overscroll-contain">
+        <p class="text-xs text-gray-400">Selecciona la caja en la que quieres organizar esta tarea:</p>
 
-      <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
-        <button 
-          type="button" 
-          onclick={() => { onMoveCategory?.(task.id, null); showCategoryModal = false; }}
-          class="w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left {!task.categoryId ? 'bg-accent-cyan/15 border-accent-cyan text-white' : 'bg-navy-surface border-white/5 text-gray-300 hover:bg-white/5'}"
-        >
-          <div class="flex items-center gap-2">
-            <span>📋</span>
-            <span class="font-medium text-sm">General (Sin clasificar)</span>
-          </div>
-          {#if !task.categoryId}
-            <Check size={16} class="text-accent-cyan" />
-          {/if}
-        </button>
-
-        {#each categories as cat}
+        <div class="space-y-2 pb-4">
           <button 
             type="button" 
-            onclick={() => { onMoveCategory?.(task.id, cat.id); showCategoryModal = false; }}
-            class="w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left {task.categoryId === cat.id ? 'bg-accent-cyan/15 border-accent-cyan text-white' : 'bg-navy-surface border-white/5 text-gray-300 hover:bg-white/5'}"
+            onclick={() => { onMoveCategory?.(task.id, null); showCategoryModal = false; }}
+            class="w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left {!task.categoryId ? 'bg-accent-cyan/15 border-accent-cyan text-white shadow-sm' : 'bg-navy-surface border-white/5 text-gray-300 hover:bg-white/5'}"
           >
-            <div class="flex items-center gap-2">
-              <span>{cat.icon || '📦'}</span>
-              <span class="font-medium text-sm">{cat.name}</span>
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl">📋</span>
+              <span class="font-medium text-sm">General (Sin clasificar)</span>
             </div>
-            {#if task.categoryId === cat.id}
+            {#if !task.categoryId}
               <Check size={16} class="text-accent-cyan" />
             {/if}
           </button>
-        {/each}
+
+          {#each categories as cat}
+            <button 
+              type="button" 
+              onclick={() => { onMoveCategory?.(task.id, cat.id); showCategoryModal = false; }}
+              class="w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left {task.categoryId === cat.id ? 'bg-accent-cyan/15 border-accent-cyan text-white shadow-sm' : 'bg-navy-surface border-white/5 text-gray-300 hover:bg-white/5'}"
+            >
+              <div class="flex items-center gap-2.5">
+                <span class="text-xl">{cat.icon || '📦'}</span>
+                <span class="font-medium text-sm">{cat.name}</span>
+              </div>
+              {#if task.categoryId === cat.id}
+                <Check size={16} class="text-accent-cyan" />
+              {/if}
+            </button>
+          {/each}
+        </div>
       </div>
     </div>
   </div>
