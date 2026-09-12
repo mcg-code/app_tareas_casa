@@ -283,23 +283,6 @@
   <div class="w-full">
     {#if activeTab === 'inventory'}
       <!-- VISTA INVENTARIO -->
-      <div class="flex items-center justify-between gap-2 mb-4">
-        <p class="text-xs text-gray-400">
-          {#if showLocations && data.locations.length > 0}
-            Objetos y provisiones disponibles en cada cajón:
-          {:else}
-            Objetos y provisiones disponibles en el inventario:
-          {/if}
-        </p>
-        <button 
-          type="button" 
-          onclick={() => openAddItemModal('inventory')}
-          class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow shrink-0"
-        >
-          <Plus size={14} /> + Objeto
-        </button>
-      </div>
-
       {#if data.items.length === 0}
         <div class="text-center py-12 px-4 bg-navy-surface/30 border border-white/5 rounded-2xl">
           <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-400/10 flex items-center justify-center text-3xl">
