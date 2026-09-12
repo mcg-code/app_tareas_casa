@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Search, Plus, CalendarPlus, AlertTriangle, Edit2, Trash2, Clock } from '@lucide/svelte';
+  import { page } from '$app/state';
   
   let { data } = $props();
 
@@ -9,6 +10,7 @@
   let editingFrequencyValue = $state<number | null>(null);
   let showInfo = $state(false);
   let selectedFrequency = $state('none');
+  let selectedCategory = $state(page.url.searchParams.get('categoryId') || 'none');
 
   let showDueDates = $derived(data.user?.settings?.enableDueDates === true);
   let newDueDate = $state('');
@@ -192,6 +194,24 @@
             <select name="frequencyValue" class="bg-navy-surface w-full px-4 py-3 rounded-xl border border-white/5 text-white outline-none">
               {#each Array.from({ length: 31 }, (_, i) => i + 1) as day}
                 <option value={day}>Día {day}</option>
+              {/each}
+            </select>
+          </div>
+        {/if}
+
+        {#if data.categories && data.categories.length > 0}
+          <div class="space-y-1.5 animate-in fade-in slide-in-from-top-2">
+            <label class="text-xs font-medium text-gray-400 ml-1 flex items-center gap-1.5">
+              <span>📦</span> Caja / Categoría
+            </label>
+            <select 
+              name="categoryId" 
+              bind:value={selectedCategory}
+              class="bg-navy-surface w-full px-4 py-3 rounded-xl border border-white/5 text-white outline-none font-medium"
+            >
+              <option value="none">General (Sin clasificar)</option>
+              {#each data.categories as cat}
+                <option value={cat.id}>{cat.icon || '📦'} {cat.name}</option>
               {/each}
             </select>
           </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ListTodo, CheckCircle2, Plus, AlertTriangle, ThumbsUp, ThumbsDown, Users, Settings } from '@lucide/svelte';
+  import { ListTodo, CheckCircle2, Plus, AlertTriangle, ThumbsUp, ThumbsDown, Users, Settings, PackagePlus, ChevronDown, ChevronUp, Edit2, Trash2, X, Check } from '@lucide/svelte';
   import TaskCard from '$lib/components/TaskCard.svelte';
   import { invalidateAll } from '$app/navigation';
   import confetti from 'canvas-confetti';
@@ -10,6 +10,20 @@
   let showQuarantine = $derived(data.settings?.enableQuarantine !== false);
   let showPoints = $derived(data.settings?.enablePoints !== false);
   let showDueDates = $derived(data.settings?.enableDueDates === true);
+
+  let showCategoryManagerModal = $state(false);
+  let newCategoryName = $state('');
+  let newCategoryIcon = $state('🏠');
+  let editingCategoryId = $state<string | null>(null);
+  let editCategoryName = $state('');
+  let editCategoryIcon = $state('📦');
+  let collapsedBoxes = $state<Record<string, boolean>>({});
+
+  const popularEmojis = ['🏠', '🛒', '🧳', '🚗', '🏕️', '🧹', '🍳', '💼', '📋', '🎒', '🐾', '🔧'];
+
+  function toggleCollapse(boxId: string) {
+    collapsedBoxes[boxId] = !collapsedBoxes[boxId];
+  }
 
   let myTasks = $derived(
     data.tasks.filter(t => t.assignees?.some(a => a.id === data.userId) || t.assignedToId === data.userId)
@@ -107,6 +121,45 @@
     await fetch('?/updateDueDate', { method: 'POST', body: formData });
     await invalidateAll();
   }
+
+  async function handleCreateBox(e: SubmitEvent) {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    const formData = new FormData();
+    formData.append('name', newCategoryName.trim());
+    formData.append('icon', newCategoryIcon);
+    await fetch('?/createCategory', { method: 'POST', body: formData });
+    newCategoryName = '';
+    await invalidateAll();
+  }
+
+  async function handleUpdateBox(e: SubmitEvent) {
+    e.preventDefault();
+    if (!editingCategoryId || !editCategoryName.trim()) return;
+    const formData = new FormData();
+    formData.append('categoryId', editingCategoryId);
+    formData.append('name', editCategoryName.trim());
+    formData.append('icon', editCategoryIcon);
+    await fetch('?/updateCategory', { method: 'POST', body: formData });
+    editingCategoryId = null;
+    await invalidateAll();
+  }
+
+  async function handleDeleteBox(categoryId: string) {
+    if (!confirm('¿Eliminar esta caja? Las tareas que contenga no se borrarán, pasarán a General.')) return;
+    const formData = new FormData();
+    formData.append('categoryId', categoryId);
+    await fetch('?/deleteCategory', { method: 'POST', body: formData });
+    await invalidateAll();
+  }
+
+  async function handleMoveTaskCategory(taskId: string, categoryId: string | null) {
+    const formData = new FormData();
+    formData.append('taskId', taskId);
+    if (categoryId) formData.append('categoryId', categoryId);
+    await fetch('?/setTaskCategory', { method: 'POST', body: formData });
+    await invalidateAll();
+  }
 </script>
 
 <div class="h-full w-full flex flex-col relative z-10 pt-4 pb-28">
@@ -119,6 +172,16 @@
 
     <div class="flex items-center gap-2">
       {#if data.user?.isAdmin}
+        <button 
+          type="button" 
+          onclick={() => showCategoryManagerModal = true}
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-accent-cyan rounded-xl text-xs font-bold border border-accent-cyan/30 shadow-glass transition-all"
+          title="Organizar cajas de tareas"
+        >
+          <PackagePlus size={15} />
+          <span class="hidden sm:inline">{data.categories && data.categories.length > 0 ? 'Cajas' : '+ Cajas'}</span>
+        </button>
+
         <a 
           href="/settings" 
           class="p-2 bg-navy-surface hover:bg-white/10 text-gray-400 hover:text-accent-cyan rounded-xl transition-all border border-white/5 shadow-glass"
@@ -171,7 +234,171 @@
           <h3 class="text-xl font-bold text-gray-200 mb-2">¡Todo limpio por aquí!</h3>
           <p class="text-gray-400 text-sm max-w-[250px] leading-relaxed">No hay tareas planificadas para hoy. Busca en el catálogo para añadir una.</p>
         </div>
+      {:else if data.categories && data.categories.length > 0}
+        <!-- VISTA VERTICAL DIVIDIDA EN CAJAS -->
+        {#each data.categories as cat}
+          {@const catTasks = data.tasks.filter(t => t.categoryId === cat.id)}
+          {@const isCollapsed = collapsedBoxes[cat.id]}
+          <div class="mb-5 bg-navy-surface/50 border border-white/10 rounded-2xl p-4 shadow-glass transition-all fade-in">
+            <!-- Cabecera de la Caja -->
+            <div class="flex items-center justify-between gap-2 {isCollapsed && catTasks.length === 0 ? '' : 'mb-3'}">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <span class="text-2xl shrink-0">{cat.icon || '📦'}</span>
+                <div class="min-w-0">
+                  <h3 class="font-bold text-white text-base truncate flex items-center gap-2">
+                    <span>{cat.name}</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-accent-cyan shrink-0">
+                      {catTasks.length}
+                    </span>
+                  </h3>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                <a 
+                  href="/tasks/new?categoryId={cat.id}" 
+                  class="flex items-center gap-1 px-2.5 py-1.5 bg-accent-cyan/10 hover:bg-accent-cyan hover:text-navy-bg text-accent-cyan text-xs font-bold rounded-xl transition-all border border-accent-cyan/30"
+                  title="Añadir tarea a esta caja"
+                >
+                  <Plus size={14} />
+                  <span class="hidden xs:inline">Tarea</span>
+                </a>
+
+                <button 
+                  type="button" 
+                  onclick={() => toggleCollapse(cat.id)}
+                  class="p-1.5 text-gray-400 hover:text-white rounded-xl hover:bg-white/5 transition-colors"
+                  title={isCollapsed ? "Expandir caja" : "Plegar caja"}
+                >
+                  {#if isCollapsed}
+                    <ChevronDown size={18} />
+                  {:else}
+                    <ChevronUp size={18} />
+                  {/if}
+                </button>
+              </div>
+            </div>
+
+            <!-- Tareas de la Caja -->
+            {#if !isCollapsed}
+              {#if catTasks.length > 0}
+                <div class="space-y-3 mt-3">
+                  {#each catTasks as task}
+                    <TaskCard 
+                      {task} 
+                      currentUserId={data.userId}
+                      houseMembers={data.houseMembers}
+                      categories={data.categories}
+                      {showPoints}
+                      {showDueDates}
+                      onUpdateDueDate={handleUpdateDueDate}
+                      onMoveCategory={handleMoveTaskCategory}
+                      onClaim={() => handleClaim(task.id)} 
+                      onJoin={() => handleJoin(task.id)}
+                      onUnclaim={() => handleUnclaim(task.id, data.userId)} 
+                      onToggleAssignee={handleToggleAssignee}
+                      onComplete={() => handleComplete(task.id)} 
+                      onRemove={() => handleDelete(task.id)} 
+                    />
+                  {/each}
+                </div>
+              {:else}
+                <div class="py-4 text-center text-gray-500 text-xs flex items-center justify-center gap-2 border border-dashed border-white/5 rounded-xl mt-2">
+                  <span>Sin tareas pendientes</span>
+                  <span>·</span>
+                  <a href="/tasks/new?categoryId={cat.id}" class="text-accent-cyan hover:underline font-bold">
+                    + Añadir
+                  </a>
+                </div>
+              {/if}
+            {/if}
+          </div>
+        {/each}
+
+        <!-- Tareas sin caja asignada (si las hay) -->
+        {@const unclassifiedTasks = data.tasks.filter(t => !t.categoryId)}
+        {#if unclassifiedTasks.length > 0}
+          {@const isCollapsed = collapsedBoxes['unclassified']}
+          <div class="mb-5 bg-navy-surface/30 border border-white/5 rounded-2xl p-4 shadow-glass transition-all fade-in">
+            <div class="flex items-center justify-between gap-2 {isCollapsed ? '' : 'mb-3'}">
+              <div class="flex items-center gap-2.5">
+                <span class="text-2xl shrink-0">📋</span>
+                <h3 class="font-bold text-gray-300 text-base flex items-center gap-2">
+                  <span>General / Sin clasificar</span>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-gray-400">
+                    {unclassifiedTasks.length}
+                  </span>
+                </h3>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <a 
+                  href="/tasks/new" 
+                  class="flex items-center gap-1 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold rounded-xl transition-all border border-white/10"
+                >
+                  <Plus size={14} />
+                  <span class="hidden xs:inline">Tarea</span>
+                </a>
+                <button 
+                  type="button" 
+                  onclick={() => toggleCollapse('unclassified')}
+                  class="p-1.5 text-gray-400 hover:text-white rounded-xl hover:bg-white/5 transition-colors"
+                >
+                  {#if isCollapsed}
+                    <ChevronDown size={18} />
+                  {:else}
+                    <ChevronUp size={18} />
+                  {/if}
+                </button>
+              </div>
+            </div>
+
+            {#if !isCollapsed}
+              <div class="space-y-3 mt-3">
+                {#each unclassifiedTasks as task}
+                  <TaskCard 
+                    {task} 
+                    currentUserId={data.userId}
+                    houseMembers={data.houseMembers}
+                    categories={data.categories}
+                    {showPoints}
+                    {showDueDates}
+                    onUpdateDueDate={handleUpdateDueDate}
+                    onMoveCategory={handleMoveTaskCategory}
+                    onClaim={() => handleClaim(task.id)} 
+                    onJoin={() => handleJoin(task.id)}
+                    onUnclaim={() => handleUnclaim(task.id, data.userId)} 
+                    onToggleAssignee={handleToggleAssignee}
+                    onComplete={() => handleComplete(task.id)} 
+                    onRemove={() => handleDelete(task.id)} 
+                  />
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
+
       {:else}
+        <!-- MODO CLÁSICO (SIN CAJAS CREADAS AÚN) -->
+        {#if data.user?.isAdmin}
+          <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-accent-cyan/10 to-indigo-500/10 border border-accent-cyan/20 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl">📦</span>
+              <div>
+                <h4 class="text-sm font-bold text-white">Divide tus tareas en Cajas</h4>
+                <p class="text-xs text-gray-400">Crea secciones como "En casa", "Compras", "Equipaje" para organizar mejor este espacio.</p>
+              </div>
+            </div>
+            <button 
+              type="button"
+              onclick={() => showCategoryManagerModal = true}
+              class="px-3 py-2 bg-accent-cyan text-navy-bg font-bold text-xs rounded-xl hover:bg-cyan-300 transition-all shrink-0 shadow-glow"
+            >
+              + Crear Cajas
+            </button>
+          </div>
+        {/if}
+
         <!-- Tareas Mías (Individuales o en equipo) -->
         {#if myTasks.length > 0}
           <div class="mb-6 fade-in">
@@ -184,9 +411,11 @@
                   {task} 
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
+                  categories={data.categories}
                   {showPoints}
                   {showDueDates}
                   onUpdateDueDate={handleUpdateDueDate}
+                  onMoveCategory={handleMoveTaskCategory}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 
@@ -211,9 +440,11 @@
                   {task} 
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
+                  categories={data.categories}
                   {showPoints}
                   {showDueDates}
                   onUpdateDueDate={handleUpdateDueDate}
+                  onMoveCategory={handleMoveTaskCategory}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 
@@ -238,9 +469,11 @@
                   {task} 
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
+                  categories={data.categories}
                   {showPoints}
                   {showDueDates}
                   onUpdateDueDate={handleUpdateDueDate}
+                  onMoveCategory={handleMoveTaskCategory}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 
@@ -320,3 +553,110 @@
     </div>
   </div>
 </div>
+
+<!-- Modal para Administrar Cajas de Tareas -->
+{#if showCategoryManagerModal}
+  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onclick={() => showCategoryManagerModal = false}>
+    <div class="bg-navy-bg border border-white/10 w-full max-w-md rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 space-y-5 max-h-[90vh] overflow-y-auto" onclick={(e) => e.stopPropagation()}>
+      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <span>📦</span> Organizar Cajas de Tareas
+        </h3>
+        <button type="button" onclick={() => showCategoryManagerModal = false} class="text-gray-400 hover:text-white p-1 rounded-lg">
+          <X size={20} />
+        </button>
+      </div>
+
+      <p class="text-xs text-gray-400 leading-relaxed">
+        Las cajas dividen la lista de tareas en secciones temáticas (ej: <em>En casa</em>, <em>Compras</em>, <em>Equipaje</em>, <em>Campamento</em>).
+      </p>
+
+      <!-- Formulario para Crear Nueva Caja -->
+      <form onsubmit={handleCreateBox} class="space-y-3 bg-navy-surface/60 p-4 rounded-2xl border border-white/5">
+        <h4 class="text-xs font-bold text-accent-cyan uppercase tracking-wider">+ Nueva Caja</h4>
+        
+        <div class="space-y-1">
+          <label class="text-[11px] text-gray-400">Nombre de la caja</label>
+          <input 
+            type="text" 
+            bind:value={newCategoryName} 
+            placeholder="Ej: En casa, Compras, Equipaje..." 
+            class="w-full px-3 py-2.5 rounded-xl bg-navy-bg border border-white/10 text-white text-sm outline-none focus:border-accent-cyan"
+            required
+          />
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-[11px] text-gray-400">Elige un emoji</label>
+          <div class="flex flex-wrap gap-2">
+            {#each popularEmojis as em}
+              <button 
+                type="button" 
+                onclick={() => newCategoryIcon = em}
+                class="w-9 h-9 rounded-xl flex items-center justify-center text-lg border transition-all {newCategoryIcon === em ? 'bg-accent-cyan/20 border-accent-cyan scale-110' : 'bg-navy-bg border-white/5 hover:bg-white/5'}"
+              >
+                {em}
+              </button>
+            {/each}
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          class="w-full py-2.5 bg-accent-cyan hover:bg-cyan-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
+        >
+          <Plus size={15} /> Crear Caja
+        </button>
+      </form>
+
+      <!-- Lista de Cajas Existentes -->
+      {#if data.categories && data.categories.length > 0}
+        <div class="space-y-2 pt-2">
+          <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Cajas actuales ({data.categories.length})</h4>
+          <div class="space-y-2">
+            {#each data.categories as cat}
+              <div class="flex items-center justify-between p-3 rounded-xl bg-navy-surface border border-white/5">
+                {#if editingCategoryId === cat.id}
+                  <form onsubmit={handleUpdateBox} class="flex items-center gap-2 flex-1">
+                    <input type="text" bind:value={editCategoryIcon} class="w-10 px-1 py-1.5 text-center bg-navy-bg border border-white/10 rounded-lg text-sm" />
+                    <input type="text" bind:value={editCategoryName} class="flex-1 px-3 py-1.5 bg-navy-bg border border-white/10 rounded-lg text-sm text-white" required />
+                    <button type="submit" class="p-2 text-accent-cyan hover:bg-accent-cyan/10 rounded-lg">
+                      <Check size={16} />
+                    </button>
+                    <button type="button" onclick={() => editingCategoryId = null} class="p-2 text-gray-400 hover:bg-white/5 rounded-lg">
+                      <X size={16} />
+                    </button>
+                  </form>
+                {:else}
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-xl">{cat.icon || '📦'}</span>
+                    <span class="font-bold text-white text-sm">{cat.name}</span>
+                  </div>
+
+                  <div class="flex items-center gap-1">
+                    <button 
+                      type="button" 
+                      onclick={() => { editingCategoryId = cat.id; editCategoryName = cat.name; editCategoryIcon = cat.icon || '📦'; }}
+                      class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                      title="Editar nombre"
+                    >
+                      <Edit2 size={15} />
+                    </button>
+                    <button 
+                      type="button" 
+                      onclick={() => handleDeleteBox(cat.id)}
+                      class="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                      title="Eliminar caja"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}

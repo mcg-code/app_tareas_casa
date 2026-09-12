@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { taskTemplates, tasks, taskApprovals, frozenPoints } from '$lib/server/db/schema';
-import { eq, like, and } from 'drizzle-orm';
+import { taskTemplates, tasks, taskApprovals, frozenPoints, taskCategories } from '$lib/server/db/schema';
+import { eq, like, and, asc } from 'drizzle-orm';
 import { generateId } from '$lib/server/utils';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -14,7 +14,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     .where(eq(taskTemplates.houseId, houseId))
     .orderBy(taskTemplates.createdAt);
 
-  return { templates, user: locals.user };
+  const categories = await db.select().from(taskCategories)
+    .where(eq(taskCategories.houseId, houseId))
+    .orderBy(asc(taskCategories.order), asc(taskCategories.createdAt));
+
+  return { templates, categories, user: locals.user };
 };
 
 export const actions = {
@@ -29,6 +33,8 @@ export const actions = {
     const frequency = data.get('frequency')?.toString() || 'none';
     const frequencyValueStr = data.get('frequencyValue')?.toString();
     const dueDateStr = data.get('dueDate')?.toString();
+    const categoryIdRaw = data.get('categoryId')?.toString();
+    const categoryId = categoryIdRaw && categoryIdRaw !== 'none' ? categoryIdRaw : null;
 
     if (!title || !pointsStr) return fail(400);
 
@@ -36,6 +42,7 @@ export const actions = {
     await db.insert(taskTemplates).values({
       id: templateId,
       houseId,
+      categoryId,
       title,
       basePoints: parseInt(pointsStr),
       frequency: frequency as 'none' | 'daily' | 'weekly' | 'monthly',
@@ -49,6 +56,7 @@ export const actions = {
     await db.insert(tasks).values({
       id: generateId(),
       houseId,
+      categoryId,
       templateId,
       title,
       basePoints: parseInt(pointsStr),
@@ -66,6 +74,7 @@ export const actions = {
     const data = await request.formData();
     const templateId = data.get('templateId')?.toString();
     const dueDateStr = data.get('dueDate')?.toString();
+    const categoryIdRaw = data.get('categoryId')?.toString();
 
     if (!templateId) return fail(400);
 
@@ -73,11 +82,13 @@ export const actions = {
     if (!template) return fail(404);
 
     const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+    const categoryId = categoryIdRaw && categoryIdRaw !== 'none' ? categoryIdRaw : template.categoryId;
 
     // Planificamos para hoy
     await db.insert(tasks).values({
       id: generateId(),
       houseId,
+      categoryId,
       templateId: template.id,
       title: template.title,
       basePoints: template.basePoints,

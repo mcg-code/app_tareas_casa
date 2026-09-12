@@ -1,8 +1,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { houses } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { houses, taskCategories, tasks, taskTemplates } from '$lib/server/db/schema';
+import { eq, asc, and } from 'drizzle-orm';
+import { generateId } from '$lib/server/utils';
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
@@ -21,9 +22,14 @@ export const load: PageServerLoad = async ({ locals }) => {
     redirect(303, '/houses');
   }
 
+  const categories = await db.select().from(taskCategories)
+    .where(eq(taskCategories.houseId, locals.user.houseId))
+    .orderBy(asc(taskCategories.order), asc(taskCategories.createdAt));
+
   return {
     houseName: house.name,
     houseCode: house.code,
+    categories,
     settings: {
       enableStore: house.enableStore ?? true,
       enableFeed: house.enableFeed ?? true,
@@ -75,5 +81,69 @@ export const actions = {
         enableDueDates
       }
     };
+  },
+
+  createCategory: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403);
+
+    const data = await request.formData();
+    const name = data.get('name')?.toString().trim();
+    const icon = data.get('icon')?.toString().trim() || '📦';
+    const color = data.get('color')?.toString().trim() || 'cyan';
+
+    if (!name) return fail(400);
+
+    const existing = await db.select().from(taskCategories).where(eq(taskCategories.houseId, locals.user.houseId));
+
+    await db.insert(taskCategories).values({
+      id: generateId(),
+      houseId: locals.user.houseId,
+      name,
+      icon,
+      color,
+      order: existing.length,
+      createdAt: new Date()
+    });
+
+    return { success: true };
+  },
+
+  updateCategory: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403);
+
+    const data = await request.formData();
+    const categoryId = data.get('categoryId')?.toString();
+    const name = data.get('name')?.toString().trim();
+    const icon = data.get('icon')?.toString().trim() || '📦';
+
+    if (!categoryId || !name) return fail(400);
+
+    await db.update(taskCategories).set({
+      name,
+      icon
+    }).where(and(eq(taskCategories.id, categoryId), eq(taskCategories.houseId, locals.user.houseId)));
+
+    return { success: true };
+  },
+
+  deleteCategory: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403);
+
+    const data = await request.formData();
+    const categoryId = data.get('categoryId')?.toString();
+    if (!categoryId) return fail(400);
+
+    await db.update(tasks).set({ categoryId: null })
+      .where(and(eq(tasks.categoryId, categoryId), eq(tasks.houseId, locals.user.houseId)));
+    await db.update(taskTemplates).set({ categoryId: null })
+      .where(and(eq(taskTemplates.categoryId, categoryId), eq(taskTemplates.houseId, locals.user.houseId)));
+
+    await db.delete(taskCategories)
+      .where(and(eq(taskCategories.id, categoryId), eq(taskCategories.houseId, locals.user.houseId)));
+
+    return { success: true };
   }
 } satisfies Actions;

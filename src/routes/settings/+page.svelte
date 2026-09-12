@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
-  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock } from '@lucide/svelte';
+  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock, Package, Plus, Trash2, Edit2, X } from '@lucide/svelte';
   
   let { data, form } = $props();
 
@@ -12,6 +12,45 @@
   let dueDatesActive = $state(data.settings?.enableDueDates ?? false);
   let showSavedNotification = $state(false);
   let isSaving = $state(false);
+
+  let newCategoryName = $state('');
+  let newCategoryIcon = $state('🏠');
+  let editingCatId = $state<string | null>(null);
+  let editCatName = $state('');
+  let editCatIcon = $state('📦');
+
+  const popularEmojis = ['🏠', '🛒', '🧳', '🚗', '🏕️', '🧹', '🍳', '💼', '📋', '🎒', '🐾', '🔧'];
+
+  async function handleCreateBox(e: SubmitEvent) {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    const formData = new FormData();
+    formData.append('name', newCategoryName.trim());
+    formData.append('icon', newCategoryIcon);
+    await fetch('?/createCategory', { method: 'POST', body: formData });
+    newCategoryName = '';
+    await invalidateAll();
+  }
+
+  async function handleUpdateBox(e: SubmitEvent) {
+    e.preventDefault();
+    if (!editingCatId || !editCatName.trim()) return;
+    const formData = new FormData();
+    formData.append('categoryId', editingCatId);
+    formData.append('name', editCatName.trim());
+    formData.append('icon', editCatIcon);
+    await fetch('?/updateCategory', { method: 'POST', body: formData });
+    editingCatId = null;
+    await invalidateAll();
+  }
+
+  async function handleDeleteBox(categoryId: string) {
+    if (!confirm('¿Eliminar esta caja? Las tareas que contenga no se borrarán, pasarán a General.')) return;
+    const formData = new FormData();
+    formData.append('categoryId', categoryId);
+    await fetch('?/deleteCategory', { method: 'POST', body: formData });
+    await invalidateAll();
+  }
 
   let formElement: HTMLFormElement | undefined = $state();
   let saveTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -233,4 +272,103 @@
       </button>
     </div>
   </form>
+
+  <!-- Sección Cajas y Secciones de Tareas -->
+  <div class="mt-8 pt-6 border-t border-white/10 space-y-4">
+    <div>
+      <h3 class="font-bold text-white text-base flex items-center gap-2">
+        <span>📦</span> Cajas de Tareas
+      </h3>
+      <p class="text-xs text-gray-400 mt-0.5">
+        Divide la lista de tareas en secciones temáticas (ej: En casa, Compras, Equipaje).
+      </p>
+    </div>
+
+    <!-- Formulario Nueva Caja -->
+    <form onsubmit={handleCreateBox} class="bg-navy-surface p-4 rounded-2xl border border-white/5 space-y-3">
+      <h4 class="text-xs font-bold text-accent-cyan uppercase tracking-wider">+ Nueva Caja</h4>
+      
+      <div class="space-y-1">
+        <label class="text-[11px] text-gray-400">Nombre de la caja</label>
+        <input 
+          type="text" 
+          bind:value={newCategoryName} 
+          placeholder="Ej: En casa, Fuera, Compras, Equipaje..." 
+          class="w-full px-3 py-2.5 rounded-xl bg-navy-bg border border-white/10 text-white text-sm outline-none focus:border-accent-cyan"
+          required
+        />
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-[11px] text-gray-400">Icono / Emoji</label>
+        <div class="flex flex-wrap gap-2">
+          {#each popularEmojis as em}
+            <button 
+              type="button" 
+              onclick={() => newCategoryIcon = em}
+              class="w-9 h-9 rounded-xl flex items-center justify-center text-lg border transition-all {newCategoryIcon === em ? 'bg-accent-cyan/20 border-accent-cyan scale-110' : 'bg-navy-bg border-white/5 hover:bg-white/5'}"
+            >
+              {em}
+            </button>
+          {/each}
+        </div>
+      </div>
+
+      <button 
+        type="submit" 
+        class="w-full py-2.5 bg-accent-cyan hover:bg-cyan-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
+      >
+        <Plus size={15} /> Añadir Caja
+      </button>
+    </form>
+
+    <!-- Lista de Cajas Existentes -->
+    {#if data.categories && data.categories.length > 0}
+      <div class="space-y-2">
+        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Cajas actuales ({data.categories.length})</h4>
+        <div class="space-y-2">
+          {#each data.categories as cat}
+            <div class="flex items-center justify-between p-3.5 rounded-2xl bg-navy-surface border border-white/5 shadow-glass">
+              {#if editingCatId === cat.id}
+                <form onsubmit={handleUpdateBox} class="flex items-center gap-2 flex-1">
+                  <input type="text" bind:value={editCatIcon} class="w-10 px-1 py-1.5 text-center bg-navy-bg border border-white/10 rounded-lg text-sm" />
+                  <input type="text" bind:value={editCatName} class="flex-1 px-3 py-1.5 bg-navy-bg border border-white/10 rounded-lg text-sm text-white" required />
+                  <button type="submit" class="p-2 text-accent-cyan hover:bg-accent-cyan/10 rounded-lg">
+                    <Check size={16} />
+                  </button>
+                  <button type="button" onclick={() => editingCatId = null} class="p-2 text-gray-400 hover:bg-white/5 rounded-lg">
+                    <X size={16} />
+                  </button>
+                </form>
+              {:else}
+                <div class="flex items-center gap-2.5">
+                  <span class="text-2xl">{cat.icon || '📦'}</span>
+                  <span class="font-bold text-white text-sm">{cat.name}</span>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <button 
+                    type="button" 
+                    onclick={() => { editingCatId = cat.id; editCatName = cat.name; editCatIcon = cat.icon || '📦'; }}
+                    class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                    title="Editar nombre"
+                  >
+                    <Edit2 size={15} />
+                  </button>
+                  <button 
+                    type="button" 
+                    onclick={() => handleDeleteBox(cat.id)}
+                    class="p-2 text-gray-400 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                    title="Eliminar caja"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
+  </div>
 </div>

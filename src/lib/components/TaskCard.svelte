@@ -3,11 +3,13 @@
   import Avatar from '$lib/components/Avatar.svelte';
   
   type Member = { id: string, name: string, emoji: string, avatarUrl?: string | null };
+  type Category = { id: string, name: string, icon?: string | null, color?: string | null };
 
   let { 
     task, 
     currentUserId,
     houseMembers = [],
+    categories = [],
     showPoints = true,
     showDueDates = false,
     onComplete, 
@@ -17,6 +19,7 @@
     onUnclaim, 
     onToggleAssignee,
     onUpdateDueDate,
+    onMoveCategory,
     onRemove 
   } = $props<{
     task: { 
@@ -24,6 +27,7 @@
       title: string, 
       basePoints: number, 
       status: string, 
+      categoryId?: string | null,
       assignedToId?: string | null, 
       assignees?: Member[],
       dueDate?: Date | string | null,
@@ -31,6 +35,7 @@
     },
     currentUserId?: string,
     houseMembers?: Member[],
+    categories?: Category[],
     showPoints?: boolean,
     showDueDates?: boolean,
     onComplete: (id: string) => void,
@@ -40,6 +45,7 @@
     onUnclaim?: (id: string, memberId?: string) => void,
     onToggleAssignee?: (taskId: string, memberId: string) => void,
     onUpdateDueDate?: (taskId: string, dueDate: string | null) => void,
+    onMoveCategory?: (taskId: string, categoryId: string | null) => void,
     onRemove?: (id: string) => void
   }>();
 
@@ -48,7 +54,10 @@
   let isDragging = $state(false);
   let showTeamModal = $state(false);
   let showDueDateModal = $state(false);
+  let showCategoryModal = $state(false);
   let editDueDateValue = $state('');
+
+  let currentCategory = $derived(categories?.find((c: Category) => c.id === task.categoryId));
 
   function formatDueDate(dInput?: Date | string | null) {
     if (!dInput) return null;
@@ -221,6 +230,19 @@
               <span>{dueInfo.text}</span>
             </div>
           {/if}
+        {/if}
+
+        <!-- Caja / Categoría -->
+        {#if categories && categories.length > 0}
+          <button 
+            type="button" 
+            onclick={(e) => { e.stopPropagation(); if (onMoveCategory) showCategoryModal = true; }}
+            class="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full {currentCategory ? 'bg-white/10 text-gray-200 border border-white/15' : 'bg-white/5 text-gray-400 border border-white/5 hover:text-gray-200'} transition-colors cursor-pointer"
+            title={onMoveCategory ? "Cambiar de caja" : "Caja"}
+          >
+            <span>{currentCategory ? (currentCategory.icon || '📦') : '📦'}</span>
+            <span class="max-w-[110px] truncate">{currentCategory ? currentCategory.name : 'Sin caja'}</span>
+          </button>
         {/if}
       </div>
     </div>
@@ -488,6 +510,56 @@
             Guardar
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal para Mover de Caja/Categoría -->
+{#if showCategoryModal && categories && categories.length > 0}
+  <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onclick={() => showCategoryModal = false}>
+    <div class="bg-navy-bg border border-white/10 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-5 sm:zoom-in-95 space-y-4" onclick={(e) => e.stopPropagation()}>
+      <div class="flex items-center justify-between pb-2 border-b border-white/5">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span>📦</span> Mover de Caja
+        </h3>
+        <button type="button" onclick={() => showCategoryModal = false} class="text-gray-400 hover:text-white p-1 rounded-lg">
+          <X size={18} />
+        </button>
+      </div>
+
+      <p class="text-xs text-gray-400">Selecciona la caja en la que quieres organizar esta tarea:</p>
+
+      <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+        <button 
+          type="button" 
+          onclick={() => { onMoveCategory?.(task.id, null); showCategoryModal = false; }}
+          class="w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left {!task.categoryId ? 'bg-accent-cyan/15 border-accent-cyan text-white' : 'bg-navy-surface border-white/5 text-gray-300 hover:bg-white/5'}"
+        >
+          <div class="flex items-center gap-2">
+            <span>📋</span>
+            <span class="font-medium text-sm">General (Sin clasificar)</span>
+          </div>
+          {#if !task.categoryId}
+            <Check size={16} class="text-accent-cyan" />
+          {/if}
+        </button>
+
+        {#each categories as cat}
+          <button 
+            type="button" 
+            onclick={() => { onMoveCategory?.(task.id, cat.id); showCategoryModal = false; }}
+            class="w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left {task.categoryId === cat.id ? 'bg-accent-cyan/15 border-accent-cyan text-white' : 'bg-navy-surface border-white/5 text-gray-300 hover:bg-white/5'}"
+          >
+            <div class="flex items-center gap-2">
+              <span>{cat.icon || '📦'}</span>
+              <span class="font-medium text-sm">{cat.name}</span>
+            </div>
+            {#if task.categoryId === cat.id}
+              <Check size={16} class="text-accent-cyan" />
+            {/if}
+          </button>
+        {/each}
       </div>
     </div>
   </div>

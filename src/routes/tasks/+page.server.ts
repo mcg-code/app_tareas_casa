@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { tasks, houseMembers, auditLogs, taskTemplates, taskApprovals, frozenPoints, taskAssignees, users } from '$lib/server/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { tasks, houseMembers, auditLogs, taskTemplates, taskApprovals, frozenPoints, taskAssignees, users, taskCategories } from '$lib/server/db/schema';
+import { eq, desc, and, asc } from 'drizzle-orm';
 import { generateId } from '$lib/server/utils';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -113,9 +113,15 @@ export const load: PageServerLoad = async ({ locals }) => {
     .innerJoin(houseMembers, eq(taskAssignees.memberId, houseMembers.id))
     .innerJoin(users, eq(houseMembers.userId, users.id));
 
+  // Cargar categorías/cajas de la casa
+  const categories = await db.select().from(taskCategories)
+    .where(eq(taskCategories.houseId, houseId))
+    .orderBy(asc(taskCategories.order), asc(taskCategories.createdAt));
+
   // Cargar tareas de hoy (pendientes o reclamadas)
   const rawTodayTasks = await db.select({
     id: tasks.id,
+    categoryId: tasks.categoryId,
     title: tasks.title,
     basePoints: tasks.currentPoints,
     assignedToId: tasks.assignedToId,
@@ -143,6 +149,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     return {
       id: t.id,
+      categoryId: t.categoryId,
       title: t.title,
       basePoints: t.basePoints,
       assignedToId: t.assignedToId || (assigneesForTask[0]?.id ?? null),
@@ -188,6 +195,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
   return {
     tasks: todayTasks,
+    categories,
     houseMembers: currentHouseMembers.map(m => ({ id: m.id, name: m.displayName || m.name, emoji: m.emoji || '👤', avatarUrl: m.avatarUrl })),
     quarantine: quarantineWithVotes,
     userId: currentMemberId,
@@ -540,6 +548,89 @@ export const actions = {
 
     const dueDate = dueDateStr ? new Date(dueDateStr) : null;
     await db.update(tasks).set({ dueDate }).where(eq(tasks.id, taskId));
+
+    return { success: true };
+  },
+
+  createCategory: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403, { message: 'Solo el administrador puede crear cajas' });
+
+    const data = await request.formData();
+    const name = data.get('name')?.toString().trim();
+    const icon = data.get('icon')?.toString().trim() || '📦';
+    const color = data.get('color')?.toString().trim() || 'cyan';
+
+    if (!name) return fail(400, { message: 'El nombre es obligatorio' });
+
+    const existing = await db.select().from(taskCategories).where(eq(taskCategories.houseId, locals.user.houseId));
+
+    await db.insert(taskCategories).values({
+      id: generateId(),
+      houseId: locals.user.houseId,
+      name,
+      icon,
+      color,
+      order: existing.length,
+      createdAt: new Date()
+    });
+
+    return { success: true };
+  },
+
+  updateCategory: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403);
+
+    const data = await request.formData();
+    const categoryId = data.get('categoryId')?.toString();
+    const name = data.get('name')?.toString().trim();
+    const icon = data.get('icon')?.toString().trim() || '📦';
+    const color = data.get('color')?.toString().trim() || 'cyan';
+
+    if (!categoryId || !name) return fail(400);
+
+    await db.update(taskCategories).set({
+      name,
+      icon,
+      color
+    }).where(and(eq(taskCategories.id, categoryId), eq(taskCategories.houseId, locals.user.houseId)));
+
+    return { success: true };
+  },
+
+  deleteCategory: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403);
+
+    const data = await request.formData();
+    const categoryId = data.get('categoryId')?.toString();
+    if (!categoryId) return fail(400);
+
+    // Desvincular tareas de esta categoría sin borrarlas
+    await db.update(tasks).set({ categoryId: null })
+      .where(and(eq(tasks.categoryId, categoryId), eq(tasks.houseId, locals.user.houseId)));
+    await db.update(taskTemplates).set({ categoryId: null })
+      .where(and(eq(taskTemplates.categoryId, categoryId), eq(taskTemplates.houseId, locals.user.houseId)));
+
+    await db.delete(taskCategories)
+      .where(and(eq(taskCategories.id, categoryId), eq(taskCategories.houseId, locals.user.houseId)));
+
+    return { success: true };
+  },
+
+  setTaskCategory: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+
+    const data = await request.formData();
+    const taskId = data.get('taskId')?.toString();
+    const categoryId = data.get('categoryId')?.toString() || null;
+
+    if (!taskId) return fail(400);
+
+    await db.update(tasks).set({
+      categoryId: categoryId === 'none' || categoryId === '' ? null : categoryId
+    }).where(and(eq(tasks.id, taskId), eq(tasks.houseId, locals.user.houseId)));
 
     return { success: true };
   }

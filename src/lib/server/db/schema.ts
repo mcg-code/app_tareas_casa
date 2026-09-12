@@ -33,9 +33,20 @@ export const houseMembers = sqliteTable('house_members', {
   lastActiveDate: integer('last_active_date', { mode: 'timestamp' })
 });
 
+export const taskCategories = sqliteTable('task_categories', {
+  id: text('id').primaryKey(),
+  houseId: text('house_id').notNull().references(() => houses.id),
+  name: text('name').notNull(),
+  icon: text('icon').default('📦'),
+  color: text('color').default('cyan'),
+  order: integer('order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+});
+
 export const taskTemplates = sqliteTable('task_templates', {
   id: text('id').primaryKey(),
   houseId: text('house_id').notNull().references(() => houses.id),
+  categoryId: text('category_id').references(() => taskCategories.id),
   title: text('title').notNull(),
   basePoints: integer('base_points').notNull().default(10),
   frequency: text('frequency', { enum: ['none', 'daily', 'weekly', 'monthly'] }).default('none'),
@@ -64,6 +75,7 @@ export const frozenPoints = sqliteTable('frozen_points', {
 export const tasks = sqliteTable('tasks', {
   id: text('id').primaryKey(),
   houseId: text('house_id').notNull().references(() => houses.id),
+  categoryId: text('category_id').references(() => taskCategories.id),
   templateId: text('template_id').references(() => taskTemplates.id),
   title: text('title').notNull(),
   basePoints: integer('base_points').notNull().default(10),
