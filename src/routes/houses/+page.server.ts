@@ -127,6 +127,7 @@ export const actions = {
         currentStreak: 0,
         emoji,
         avatarUrl,
+        role: 'member',
         lastActiveDate: new Date()
       });
     } else {
@@ -170,6 +171,7 @@ export const actions = {
       currentStreak: 0,
       emoji,
       avatarUrl,
+      role: 'admin',
       lastActiveDate: new Date()
     });
 

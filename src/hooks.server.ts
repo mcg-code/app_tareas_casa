@@ -42,6 +42,8 @@ export const handle: Handle = async ({ event, resolve }) => {
             houseCode: houseRecord.code,
             houseName: houseRecord.name,
             points: activeMembership.points ?? 0,
+            role: (activeMembership.role || 'member') as 'admin' | 'member',
+            isAdmin: activeMembership.role === 'admin',
             settings: {
               enableStore: houseRecord.enableStore ?? true,
               enableFeed: houseRecord.enableFeed ?? true,
@@ -113,6 +115,8 @@ export const handle: Handle = async ({ event, resolve }) => {
             houseCode: legacyHouse.code,
             houseName: legacyHouse.name,
             points: legacyMember.points ?? 0,
+            role: (legacyMember.role || 'member') as 'admin' | 'member',
+            isAdmin: legacyMember.role === 'admin',
             settings: {
               enableStore: legacyHouse.enableStore ?? true,
               enableFeed: legacyHouse.enableFeed ?? true,

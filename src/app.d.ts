@@ -16,6 +16,8 @@ declare global {
 				houseCode?: string | null;
 				houseName?: string | null;
 				points?: number;
+				role?: 'admin' | 'member';
+				isAdmin?: boolean;
 				settings?: {
 					enableStore: boolean;
 					enableFeed: boolean;

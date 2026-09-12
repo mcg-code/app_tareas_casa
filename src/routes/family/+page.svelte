@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { Trophy, Flame, ChevronDown, ListTodo, Gift, Home, Pencil, Check, Camera, Settings } from '@lucide/svelte';
+  import { Trophy, Flame, ChevronDown, ListTodo, Gift, Home, Pencil, Check, Camera, Settings, Crown, Loader2 } from '@lucide/svelte';
   import { slide } from 'svelte/transition';
+  import { enhance } from '$app/forms';
+  import { invalidateAll } from '$app/navigation';
   import Avatar from '$lib/components/Avatar.svelte';
   import AvatarPicker from '$lib/components/AvatarPicker.svelte';
   
@@ -11,6 +13,8 @@
   let expandedMember = $state<string | null>(null);
   let isEditingHouseName = $state(false);
   let isEditingMyAvatar = $state(false);
+  let memberToTransfer = $state<{ id: string; name: string } | null>(null);
+  let isTransferring = $state(false);
 
   const currentMember = $derived(data.members.find(m => m.isCurrent));
   let myDisplayName = $state('');
@@ -42,24 +46,28 @@
         <!-- Nombre de la casa con botón de editar -->
         <div class="flex items-center gap-2 mt-1">
           <span class="text-sm font-bold text-gray-200">{data.houseName || data.user?.houseName || 'Mi Casa'}</span>
-          <button 
-            onclick={() => isEditingHouseName = true}
-            class="text-gray-500 hover:text-accent-cyan p-1 rounded-lg transition-colors"
-            title="Cambiar nombre de la casa"
-          >
-            <Pencil size={13} />
-          </button>
+          {#if data.user?.isAdmin}
+            <button 
+              onclick={() => isEditingHouseName = true}
+              class="text-gray-500 hover:text-accent-cyan p-1 rounded-lg transition-colors"
+              title="Cambiar nombre de la casa (solo administrador)"
+            >
+              <Pencil size={13} />
+            </button>
+          {/if}
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <a 
-          href="/settings" 
-          class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-accent-cyan rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
-          title="Ajustes de esta casa"
-        >
-          <Settings size={14} /> Ajustes
-        </a>
+        {#if data.user?.isAdmin}
+          <a 
+            href="/settings" 
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-accent-cyan rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
+            title="Ajustes de esta casa"
+          >
+            <Settings size={14} /> Ajustes
+          </a>
+        {/if}
 
         <a 
           href="/houses" 
@@ -161,6 +169,63 @@
     </div>
   {/if}
 
+  <!-- Modal ceder administración -->
+  {#if memberToTransfer}
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-navy-surface border border-white/10 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <Crown size={20} class="text-amber-400" /> Ceder Administración
+        </h3>
+        
+        <p class="text-xs text-gray-300 leading-relaxed">
+          ¿Estás seguro de que quieres ceder la administración a <strong class="text-white">{memberToTransfer.name}</strong>?
+        </p>
+        
+        <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-200 leading-relaxed">
+          ⚠️ Esta persona pasará a ser el Administrador y podrá modificar los ajustes de la casa. Tú pasarás a ser un miembro normal.
+        </div>
+
+        <form 
+          method="POST" 
+          action="?/transferAdmin" 
+          use:enhance={() => {
+            isTransferring = true;
+            return async ({ update }) => {
+              await update();
+              await invalidateAll();
+              isTransferring = false;
+              memberToTransfer = null;
+            };
+          }}
+          class="flex gap-2 pt-2"
+        >
+          <input type="hidden" name="targetMemberId" value={memberToTransfer.id} />
+          
+          <button
+            type="button"
+            onclick={() => memberToTransfer = null}
+            disabled={isTransferring}
+            class="flex-1 py-3 text-sm font-bold text-gray-400 hover:text-white bg-white/5 rounded-xl transition-colors"
+          >
+            Cancelar
+          </button>
+          
+          <button
+            type="submit"
+            disabled={isTransferring}
+            class="flex-1 py-3 text-sm font-bold text-navy-bg bg-amber-400 hover:bg-amber-300 disabled:opacity-50 rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
+          >
+            {#if isTransferring}
+              <Loader2 size={16} class="animate-spin" /> Transfiriendo...
+            {:else}
+              Confirmar y Ceder
+            {/if}
+          </button>
+        </form>
+      </div>
+    </div>
+  {/if}
+
   <div class="space-y-3">
     {#each data.members as member, i}
       <div class="bg-navy-surface rounded-2xl border {member.isCurrent ? 'border-accent-cyan/40 bg-navy-surface/90' : expandedMember === member.id ? 'border-accent-cyan/30' : 'border-white/5'} overflow-hidden transition-colors">
@@ -173,19 +238,28 @@
           >
             <div class="relative">
               <Avatar src={member.avatarUrl} emoji={member.emoji || '👤'} size="lg" />
-              {#if i === 0}
-                <div class="absolute -top-2 -right-2 text-xl filter drop-shadow-md">👑</div>
+              {#if member.role === 'admin'}
+                <div class="absolute -top-2 -right-2 text-xl filter drop-shadow-md" title="Administrador de la casa">👑</div>
               {/if}
             </div>
             
             <div>
-              <h3 class="font-bold text-gray-100 flex items-center gap-2">
+              <h3 class="font-bold text-gray-100 flex items-center flex-wrap gap-2">
                 {member.name || 'Alguien'}
                 {#if member.username && member.username !== member.name}
                   <span class="text-xs font-normal text-gray-400">(@{member.username})</span>
                 {/if}
                 {#if member.isCurrent}
                   <span class="text-[9px] bg-accent-cyan/20 text-accent-cyan px-1.5 py-0.5 rounded font-bold uppercase">Tú</span>
+                {/if}
+                {#if member.role === 'admin'}
+                  <span class="text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.5 rounded font-bold uppercase flex items-center gap-0.5">
+                    👑 Admin
+                  </span>
+                {:else}
+                  <span class="text-[9px] bg-white/5 text-gray-400 border border-white/5 px-1.5 py-0.5 rounded font-medium uppercase">
+                    Miembro
+                  </span>
                 {/if}
                 {#if showPoints}
                   <span class="text-[10px] {member.currentStreak ? 'bg-accent-orange/20 text-accent-orange' : 'bg-white/5 text-gray-500'} px-1.5 py-0.5 rounded flex items-center gap-0.5" title="Días seguidos cumpliendo tareas">
@@ -223,7 +297,7 @@
         </div>
 
         {#if expandedMember === member.id}
-          <div transition:slide={{ duration: 200 }} class="px-4 pb-4 pt-2 border-t border-white/5 bg-navy-bg/30">
+          <div transition:slide={{ duration: 200 }} class="px-4 pb-4 pt-2 border-t border-white/5 bg-navy-bg/30 space-y-4">
             <div class="grid grid-cols-2 gap-4">
               
               <div class="space-y-2">
@@ -257,6 +331,20 @@
               </div>
               
             </div>
+
+            <!-- Acción de ceder administración si soy admin y este miembro no es admin -->
+            {#if data.user?.isAdmin && !member.isCurrent && member.role !== 'admin'}
+              <div class="pt-3 border-t border-white/5 flex items-center justify-between">
+                <span class="text-xs text-gray-400">Rol: <strong class="text-gray-200">Miembro</strong></span>
+                <button
+                  type="button"
+                  onclick={() => memberToTransfer = { id: member.id, name: member.name }}
+                  class="text-xs text-amber-300 hover:text-amber-200 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                >
+                  <Crown size={14} /> Ceder administración
+                </button>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>

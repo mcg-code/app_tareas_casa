@@ -12,6 +12,8 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
     const member = await db.select().from(houseMembers).where(eq(houseMembers.id, locals.user.memberId)).get();
     if (member) {
       currentStreak = member.currentStreak || 0;
+      locals.user.role = (member.role || 'member') as 'admin' | 'member';
+      locals.user.isAdmin = member.role === 'admin';
     }
   }
 

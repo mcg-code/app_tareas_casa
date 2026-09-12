@@ -2,7 +2,8 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
 import { houseMembers, users, tasks, auditLogs, houses, taskAssignees } from '$lib/server/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
+import { generateId } from '$lib/server/utils';
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
@@ -23,6 +24,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       displayName: houseMembers.displayName,
       emoji: houseMembers.emoji,
       avatarUrl: houseMembers.avatarUrl,
+      role: houseMembers.role,
       points: houseMembers.points,
       currentStreak: houseMembers.currentStreak
     })
@@ -55,6 +57,8 @@ export const load: PageServerLoad = async ({ locals }) => {
       name: m.displayName || m.username || 'Alguien',
       username: m.username,
       displayName: m.displayName,
+      role: (m.role || 'member') as 'admin' | 'member',
+      isAdmin: m.role === 'admin',
       isCurrent: m.id === locals.user?.memberId,
       assignedTasksCount: assignedTasks.length,
       assignedTasks: assignedTasks.slice(0, 3).map(t => t.title),
@@ -65,13 +69,15 @@ export const load: PageServerLoad = async ({ locals }) => {
   return {
     members: membersWithDetails,
     houseName: locals.user.houseName,
-    currentMemberId: locals.user.memberId
+    currentMemberId: locals.user.memberId,
+    user: locals.user
   };
 };
 
 export const actions = {
   renameHouse: async ({ request, locals }) => {
     if (!locals.user || !locals.user.houseId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403, { error: 'Solo el administrador puede cambiar el nombre de la casa' });
     const houseId = locals.user.houseId;
     const data = await request.formData();
     const newName = data.get('houseName')?.toString().trim();
@@ -81,6 +87,45 @@ export const actions = {
     }
 
     await db.update(houses).set({ name: newName }).where(eq(houses.id, houseId));
+
+    return { success: true };
+  },
+
+  transferAdmin: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId || !locals.user.memberId) return fail(401);
+    if (!locals.user.isAdmin) return fail(403, { error: 'Solo el administrador actual puede ceder la administración' });
+
+    const houseId = locals.user.houseId;
+    const currentMemberId = locals.user.memberId;
+    const data = await request.formData();
+    const targetMemberId = data.get('targetMemberId')?.toString();
+
+    if (!targetMemberId || targetMemberId === currentMemberId) {
+      return fail(400, { error: 'Debes seleccionar a otro miembro para cederle la administración' });
+    }
+
+    const targetMember = await db.select().from(houseMembers)
+      .where(and(eq(houseMembers.id, targetMemberId), eq(houseMembers.houseId, houseId)))
+      .get();
+
+    if (!targetMember) {
+      return fail(404, { error: 'Miembro no encontrado en esta casa' });
+    }
+
+    await db.update(houseMembers).set({ role: 'member' }).where(eq(houseMembers.id, currentMemberId));
+    await db.update(houseMembers).set({ role: 'admin' }).where(eq(houseMembers.id, targetMemberId));
+
+    await db.insert(auditLogs).values({
+      id: generateId(),
+      houseId,
+      memberId: currentMemberId,
+      actionType: 'TRANSFERRED_ADMIN',
+      description: `cedió la administración a ${targetMember.displayName || 'otro miembro'}`,
+      createdAt: new Date()
+    });
+
+    locals.user.role = 'member';
+    locals.user.isAdmin = false;
 
     return { success: true };
   },

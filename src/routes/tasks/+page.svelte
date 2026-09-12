@@ -109,13 +109,15 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <a 
-        href="/settings" 
-        class="p-2 bg-navy-surface hover:bg-white/10 text-gray-400 hover:text-accent-cyan rounded-xl transition-all border border-white/5 shadow-glass"
-        title="Ajustes de este espacio"
-      >
-        <Settings size={16} />
-      </a>
+      {#if data.user?.isAdmin}
+        <a 
+          href="/settings" 
+          class="p-2 bg-navy-surface hover:bg-white/10 text-gray-400 hover:text-accent-cyan rounded-xl transition-all border border-white/5 shadow-glass"
+          title="Ajustes de este espacio"
+        >
+          <Settings size={16} />
+        </a>
+      {/if}
 
       <a 
         href="/houses" 

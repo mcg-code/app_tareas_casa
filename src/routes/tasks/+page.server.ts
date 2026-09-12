@@ -177,7 +177,8 @@ export const load: PageServerLoad = async ({ locals }) => {
     quarantine: quarantineWithVotes,
     userId: currentMemberId,
     houseName: locals.user.houseName,
-    settings: locals.user.settings
+    settings: locals.user.settings,
+    user: locals.user
   };
 };
 

@@ -25,6 +25,7 @@ export const houseMembers = sqliteTable('house_members', {
   displayName: text('display_name'),
   emoji: text('emoji').default('👤'),
   avatarUrl: text('avatar_url'),
+  role: text('role', { enum: ['admin', 'member'] }).default('member').notNull(),
   points: integer('points').default(0),
   lifetimePoints: integer('lifetime_points').default(0),
   currentStreak: integer('current_streak').default(0),
