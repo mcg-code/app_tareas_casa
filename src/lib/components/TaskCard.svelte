@@ -53,6 +53,8 @@
 
   let swipeOffset = $state(0);
   let startX = 0;
+  let startY = 0;
+  let isPotentialSwipe = false;
   let isDragging = $state(false);
   let showTeamModal = $state(false);
   let showDueDateModal = $state(false);
@@ -131,35 +133,70 @@
   );
 
   function handlePointerDown(e: PointerEvent) {
-    if ((e.target as HTMLElement).closest('button')) return;
+    if ((e.target as HTMLElement).closest('button, a, input, textarea, select')) return;
     if (isAssignedToMe) {
-      // Solo puedes completarla si es tuya o estás asignado
       startX = e.clientX;
-      isDragging = true;
-      (e.currentTarget as HTMLElement)?.setPointerCapture(e.pointerId);
+      startY = e.clientY;
+      isPotentialSwipe = true;
+      isDragging = false;
     }
   }
 
   function handlePointerMove(e: PointerEvent) {
-    if (!isDragging) return;
-    const currentX = e.clientX;
-    swipeOffset = currentX - startX;
-    if (swipeOffset > 150) swipeOffset = 150;
-    if (swipeOffset < -150) swipeOffset = -150;
+    if (!isPotentialSwipe && !isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    if (!isDragging) {
+      // Si el movimiento es vertical (scroll), cancelamos la posibilidad de swipe
+      // para que el navegador mueva la página con total fluidez táctil
+      if (Math.abs(dy) > 7 && Math.abs(dy) > Math.abs(dx)) {
+        isPotentialSwipe = false;
+        return;
+      }
+      // Si el movimiento es horizontal claro, iniciamos el arrastre de la tarjeta
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+        isDragging = true;
+        try {
+          (e.currentTarget as HTMLElement)?.setPointerCapture(e.pointerId);
+        } catch (err) {}
+      }
+    }
+
+    if (isDragging) {
+      swipeOffset = dx;
+      if (swipeOffset > 150) swipeOffset = 150;
+      if (swipeOffset < -150) swipeOffset = -150;
+    }
   }
 
   function handlePointerUp(e: PointerEvent) {
-    if (!isDragging) return;
-    isDragging = false;
-    (e.currentTarget as HTMLElement)?.releasePointerCapture(e.pointerId);
+    if (isDragging) {
+      isDragging = false;
+      try {
+        (e.currentTarget as HTMLElement)?.releasePointerCapture(e.pointerId);
+      } catch (err) {}
 
-    if (swipeOffset > THRESHOLD) {
-      setTimeout(() => onComplete(task.id), 300);
-    } else if (onPass && swipeOffset < -THRESHOLD) {
-      onPass(task.id);
-    } else {
+      if (swipeOffset > THRESHOLD) {
+        setTimeout(() => onComplete(task.id), 300);
+      } else if (onPass && swipeOffset < -THRESHOLD) {
+        onPass(task.id);
+      } else {
+        swipeOffset = 0;
+      }
+    }
+    isPotentialSwipe = false;
+  }
+
+  function handlePointerCancel(e: PointerEvent) {
+    if (isDragging) {
+      isDragging = false;
+      try {
+        (e.currentTarget as HTMLElement)?.releasePointerCapture(e.pointerId);
+      } catch (err) {}
       swipeOffset = 0;
     }
+    isPotentialSwipe = false;
   }
 </script>
 
@@ -179,12 +216,12 @@
 
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div 
-    class="relative z-10 flex items-center justify-between p-5 bg-navy-surface rounded-2xl touch-none select-none {isAssignedToMe ? 'cursor-grab active:cursor-grabbing' : ''}"
+    class="relative z-10 flex items-center justify-between p-5 bg-navy-surface rounded-2xl touch-pan-y select-none {isAssignedToMe ? 'cursor-grab active:cursor-grabbing' : ''}"
     style="transform: translateX({swipeOffset}px); transition: {isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'}"
     onpointerdown={handlePointerDown}
     onpointermove={handlePointerMove}
     onpointerup={handlePointerUp}
-    onpointercancel={handlePointerUp}
+    onpointercancel={handlePointerCancel}
   >
     <div class="flex flex-col gap-1.5 flex-1 min-w-0 mr-3">
       <span class="text-lg font-medium text-gray-100 leading-tight flex items-center gap-2 flex-wrap">
