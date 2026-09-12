@@ -16,11 +16,11 @@
 
   function parsePoints(description: string, actionType: string) {
     const match = description.match(/([+-]\d+)\s*pts/);
-    return match ? match[1] : (actionType === 'COMPLETED_TASK' ? '+?' : '-?');
+    return match ? match[1] : '';
   }
 
   function parseText(description: string) {
-    return description.replace(/\s*\([+-]\d+\s*pts\)/, '');
+    return description.replace(/\s*\([+-]\d+\s*pts[^)]*\)/, '');
   }
 </script>
 
@@ -47,7 +47,11 @@
           <div class="flex justify-between items-start mb-1">
             <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{formatTime(item.createdAt)}</span>
             {#if item.actionType === 'COMPLETED_TASK'}
-              <span class="text-xs font-bold text-accent-cyan flex items-center gap-1"><Trophy size={12} /> {parsePoints(item.description, item.actionType)}</span>
+              {#if item.description.match(/([+-]\d+)\s*pts/)}
+                <span class="text-xs font-bold text-accent-cyan flex items-center gap-1"><Trophy size={12} /> {parsePoints(item.description, item.actionType)}</span>
+              {:else}
+                <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">✓ Hecho</span>
+              {/if}
             {:else if item.actionType === 'BOUGHT_REWARD'}
               <span class="text-xs font-bold text-accent-orange flex items-center gap-1"><Gift size={12} /> {parsePoints(item.description, item.actionType)}</span>
             {:else}

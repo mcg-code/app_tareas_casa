@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { tasks, houseMembers, auditLogs, taskTemplates, taskApprovals, frozenPoints, taskAssignees, users, taskCategories } from '$lib/server/db/schema';
+import { tasks, houseMembers, auditLogs, taskTemplates, taskApprovals, frozenPoints, taskAssignees, users, taskCategories, houses } from '$lib/server/db/schema';
 import { eq, desc, and, asc } from 'drizzle-orm';
 import { generateId } from '$lib/server/utils';
 
@@ -360,13 +360,20 @@ export const actions = {
     const task = await db.select().from(tasks).where(eq(tasks.id, taskId)).get();
     if (!task) return fail(404);
 
+    const house = await db.select().from(houses).where(eq(houses.id, currentHouseId)).get();
+    const isQuarantineEnabled = house?.enableQuarantine ?? (locals.user.settings?.enableQuarantine ?? true);
+    const isPointsEnabled = house?.enablePoints ?? (locals.user.settings?.enablePoints ?? true);
+
     const template = task.templateId 
       ? await db.select().from(taskTemplates).where(eq(taskTemplates.id, task.templateId)).get()
       : null;
 
-    const isVerified = template 
-      ? (new Date().getTime() - new Date(template.createdAt).getTime() > 24 * 60 * 60 * 1000)
-      : true;
+    // Si la cuarentena está desactivada en la casa, la tarea SIEMPRE es válida de inmediato
+    const isVerified = !isQuarantineEnabled || (
+      template 
+        ? (new Date().getTime() - new Date(template.createdAt).getTime() > 24 * 60 * 60 * 1000)
+        : true
+    );
 
     // Obtener todas las personas asignadas
     let assignees = await db.select().from(taskAssignees).where(eq(taskAssignees.taskId, taskId));
@@ -422,24 +429,29 @@ export const actions = {
         newStreak = 1;
       }
 
+      const teamNote = memberCount > 1 
+        ? ` en equipo con ${assigneeMembers.filter(x => x.member.id !== member.id).map(x => x.userName).join(', ')}` 
+        : '';
+      const streakSuffix = newStreak > 1 ? ` 🔥${newStreak}` : '';
+
       if (isVerified) {
+        const pointsToAdd = isPointsEnabled ? pointsPerMember : 0;
         await db.update(houseMembers).set({
-          points: (member.points || 0) + pointsPerMember,
-          lifetimePoints: (member.lifetimePoints || 0) + pointsPerMember,
+          points: (member.points || 0) + pointsToAdd,
+          lifetimePoints: (member.lifetimePoints || 0) + pointsToAdd,
           currentStreak: newStreak,
           lastActiveDate: now
         }).where(eq(houseMembers.id, member.id));
 
-        const teamNote = memberCount > 1 
-          ? ` en equipo con ${assigneeMembers.filter(x => x.member.id !== member.id).map(x => x.userName).join(', ')}` 
-          : '';
+        const ptsSuffix = isPointsEnabled ? ` (+${pointsPerMember} pts)` : '';
 
+        // Registrar siempre en el feed de actividad
         await db.insert(auditLogs).values({
           id: generateId(),
           houseId: currentHouseId,
           memberId: member.id,
           actionType: 'COMPLETED_TASK',
-          description: `completó ${task.title}${teamNote} (+${pointsPerMember} pts)${newStreak > 1 ? ` 🔥${newStreak}` : ''}`,
+          description: `completó ${task.title}${teamNote}${ptsSuffix}${streakSuffix}`,
           createdAt: now
         });
       } else {
@@ -454,7 +466,19 @@ export const actions = {
           memberId: member.id,
           taskId: task.id,
           templateId: template!.id,
-          points: pointsPerMember,
+          points: isPointsEnabled ? pointsPerMember : 0,
+          createdAt: now
+        });
+
+        const ptsSuffix = isPointsEnabled ? ` (+${pointsPerMember} pts en revisión)` : '';
+
+        // Registrar también en el feed de actividad cuando está en revisión
+        await db.insert(auditLogs).values({
+          id: generateId(),
+          houseId: currentHouseId,
+          memberId: member.id,
+          actionType: 'COMPLETED_TASK',
+          description: `completó ${task.title}${teamNote}${ptsSuffix}${streakSuffix}`,
           createdAt: now
         });
       }
