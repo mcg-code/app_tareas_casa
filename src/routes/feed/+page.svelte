@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Trophy, Gift, ArrowRightLeft } from '@lucide/svelte';
+  import Avatar from '$lib/components/Avatar.svelte';
   
   let { data } = $props();
 
@@ -38,10 +39,8 @@
 
     {#each data.activities as item}
       <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-        <!-- Icono central del Timeline -->
-        <div class="flex items-center justify-center w-12 h-12 rounded-full border-4 border-navy-bg bg-navy-surface shadow-glass z-10 text-xl flex-shrink-0">
-          {item.emoji || '👤'}
-        </div>
+        <!-- Icono/Foto central del Timeline -->
+        <Avatar src={item.avatarUrl} emoji={item.emoji || '👤'} size="lg" class="border-4 border-navy-bg z-10" />
         
         <!-- Tarjeta de Contenido -->
         <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-navy-surface border border-white/5 shadow-glass ml-4 md:ml-0">

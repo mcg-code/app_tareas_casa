@@ -90,7 +90,8 @@ export const load: PageServerLoad = async ({ locals }) => {
     .select({
       id: houseMembers.id,
       name: users.name,
-      emoji: houseMembers.emoji
+      emoji: houseMembers.emoji,
+      avatarUrl: houseMembers.avatarUrl
     })
     .from(houseMembers)
     .innerJoin(users, eq(houseMembers.userId, users.id))
@@ -103,7 +104,8 @@ export const load: PageServerLoad = async ({ locals }) => {
       taskId: taskAssignees.taskId,
       memberId: taskAssignees.memberId,
       name: users.name,
-      emoji: houseMembers.emoji
+      emoji: houseMembers.emoji,
+      avatarUrl: houseMembers.avatarUrl
     })
     .from(taskAssignees)
     .innerJoin(houseMembers, eq(taskAssignees.memberId, houseMembers.id))
@@ -126,13 +128,13 @@ export const load: PageServerLoad = async ({ locals }) => {
   const todayTasks = rawTodayTasks.map(t => {
     let assigneesForTask = allTaskAssignees
       .filter(a => a.taskId === t.id)
-      .map(a => ({ id: a.memberId, name: a.name, emoji: a.emoji || '👤' }));
+      .map(a => ({ id: a.memberId, name: a.name, emoji: a.emoji || '👤', avatarUrl: a.avatarUrl }));
 
     // Si no hay asignaciones en taskAssignees pero hay assignedToId histórico
     if (assigneesForTask.length === 0 && t.assignedToId) {
       const m = currentHouseMembers.find(member => member.id === t.assignedToId);
       if (m) {
-        assigneesForTask = [{ id: m.id, name: m.name, emoji: m.emoji || '👤' }];
+        assigneesForTask = [{ id: m.id, name: m.name, emoji: m.emoji || '👤', avatarUrl: m.avatarUrl }];
       }
     }
 
@@ -169,7 +171,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
   return {
     tasks: todayTasks,
-    houseMembers: currentHouseMembers.map(m => ({ id: m.id, name: m.name, emoji: m.emoji || '👤' })),
+    houseMembers: currentHouseMembers.map(m => ({ id: m.id, name: m.name, emoji: m.emoji || '👤', avatarUrl: m.avatarUrl })),
     quarantine: quarantineWithVotes,
     userId: currentMemberId,
     houseName: locals.user.houseName

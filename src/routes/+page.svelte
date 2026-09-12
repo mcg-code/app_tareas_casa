@@ -95,32 +95,20 @@
       {:else}
         <!-- Formulario Crear Cuenta -->
         <form method="POST" action="?/register" class="space-y-4 bg-navy-surface/60 p-5 rounded-2xl border border-white/5 shadow-glass">
-          <div class="grid grid-cols-[1fr_4.5rem] gap-3">
-            <div class="space-y-1.5">
-              <label for="reg_user" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
-                <User size={12} /> Tu Nombre
-              </label>
-              <input 
-                type="text" 
-                id="reg_user" 
-                name="username" 
-                placeholder="Ej: Manu, Laura..." 
-                value={form?.username || ''}
-                class="w-full bg-navy-bg px-4 py-3.5 rounded-xl border border-white/10 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all font-medium"
-                required
-                autocomplete="username"
-              />
-            </div>
-            <div class="space-y-1.5">
-              <label for="reg_emoji" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center block">Icono</label>
-              <input 
-                type="text" 
-                id="reg_emoji" 
-                name="emoji" 
-                value={form?.emoji || '👤'}
-                class="w-full bg-navy-bg px-0 py-3.5 rounded-xl border border-white/10 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white outline-none transition-all text-center text-xl"
-              />
-            </div>
+          <div class="space-y-1.5">
+            <label for="reg_user" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
+              <User size={12} /> Tu Nombre o Usuario
+            </label>
+            <input 
+              type="text" 
+              id="reg_user" 
+              name="username" 
+              placeholder="Ej: Manu, Laura..." 
+              value={form?.username || ''}
+              class="w-full bg-navy-bg px-4 py-3.5 rounded-xl border border-white/10 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all font-medium"
+              required
+              autocomplete="username"
+            />
           </div>
 
           <div class="space-y-1.5">
@@ -138,6 +126,10 @@
               autocomplete="new-password"
             />
           </div>
+
+          <p class="text-[11px] text-gray-500 text-center leading-relaxed">
+            📸 Podrás elegir tu foto de perfil o icono para cada casa al crearla o unirte.
+          </p>
 
           <button 
             type="submit" 

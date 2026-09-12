@@ -18,8 +18,10 @@ export const load: PageServerLoad = async ({ locals }) => {
   const members = await db
     .select({
       id: houseMembers.id,
+      userId: houseMembers.userId,
       name: users.name,
       emoji: houseMembers.emoji,
+      avatarUrl: houseMembers.avatarUrl,
       points: houseMembers.points,
       currentStreak: houseMembers.currentStreak
     })
@@ -49,6 +51,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     return {
       ...m,
+      isCurrent: m.id === locals.user?.memberId,
       assignedTasksCount: assignedTasks.length,
       assignedTasks: assignedTasks.slice(0, 3).map(t => t.title),
       redeemedRewards
@@ -57,7 +60,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 
   return {
     members: membersWithDetails,
-    houseName: locals.user.houseName
+    houseName: locals.user.houseName,
+    currentMemberId: locals.user.memberId
   };
 };
 
@@ -73,6 +77,22 @@ export const actions = {
     }
 
     await db.update(houses).set({ name: newName }).where(eq(houses.id, houseId));
+
+    return { success: true };
+  },
+
+  updateProfile: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.memberId) return fail(401);
+    const memberId = locals.user.memberId;
+    const data = await request.formData();
+    const emoji = data.get('emoji')?.toString().trim() || '👤';
+    const avatarUrl = data.get('avatarUrl')?.toString().trim() || null;
+
+    await db.update(houseMembers).set({
+      emoji,
+      avatarUrl,
+      lastActiveDate: new Date()
+    }).where(eq(houseMembers.id, memberId));
 
     return { success: true };
   }

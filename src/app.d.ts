@@ -8,6 +8,7 @@ declare global {
 				userId: string;
 				name: string;
 				emoji: string;
+				avatarUrl?: string | null;
 				memberId?: string | null;
 				houseId?: string | null;
 				houseCode?: string | null;

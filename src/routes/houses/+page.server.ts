@@ -21,6 +21,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       houseName: houses.name,
       houseCode: houses.code,
       emoji: houseMembers.emoji,
+      avatarUrl: houseMembers.avatarUrl,
       points: houseMembers.points,
       currentStreak: houseMembers.currentStreak
     })
@@ -61,14 +62,14 @@ export const actions = {
   switch: async ({ request, cookies, locals }) => {
     if (!locals.user) return fail(401);
     const data = await request.formData();
-    const targetMemberId = data.get('memberId')?.toString();
-    if (!targetMemberId) return fail(400);
+    const memberId = data.get('memberId')?.toString();
+    if (!memberId) return fail(400);
 
-    // Verificar que esta membresía pertenece al usuario actual
+    // Verificar que la membresía pertenezca a este usuario
     const memberRecord = await db
       .select()
       .from(houseMembers)
-      .where(and(eq(houseMembers.id, targetMemberId), eq(houseMembers.userId, locals.user.userId)))
+      .where(and(eq(houseMembers.id, memberId), eq(houseMembers.userId, locals.user.userId)))
       .get();
 
     if (!memberRecord) {
@@ -90,7 +91,8 @@ export const actions = {
     if (!locals.user) return fail(401);
     const data = await request.formData();
     const code = data.get('code')?.toString().toUpperCase().trim();
-    const emoji = data.get('emoji')?.toString().trim() || locals.user.emoji || '👤';
+    const emoji = data.get('emoji')?.toString().trim() || '👤';
+    const avatarUrl = data.get('avatarUrl')?.toString().trim() || null;
 
     if (!code) {
       return fail(400, { error: 'Debes introducir un código de casa', code });
@@ -109,23 +111,27 @@ export const actions = {
       .where(and(eq(houseMembers.houseId, house.id), eq(houseMembers.userId, locals.user.userId)))
       .get();
 
+    let activeMemberId: string;
+
     if (!member) {
-      member = {
-        id: generateId(),
+      activeMemberId = generateId();
+      await db.insert(houseMembers).values({
+        id: activeMemberId,
         userId: locals.user.userId,
         houseId: house.id,
         points: 0,
         lifetimePoints: 0,
         currentStreak: 0,
         emoji,
+        avatarUrl,
         lastActiveDate: new Date()
-      };
-      await db.insert(houseMembers).values(member);
+      });
     } else {
-      await db.update(houseMembers).set({ emoji, lastActiveDate: new Date() }).where(eq(houseMembers.id, member.id));
+      activeMemberId = member.id;
+      await db.update(houseMembers).set({ emoji, avatarUrl, lastActiveDate: new Date() }).where(eq(houseMembers.id, member.id));
     }
 
-    cookies.set('active_member', member.id, {
+    cookies.set('active_member', activeMemberId, {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
@@ -140,7 +146,8 @@ export const actions = {
     if (!locals.user) return fail(401);
     const data = await request.formData();
     const houseName = data.get('houseName')?.toString().trim();
-    const emoji = data.get('emoji')?.toString().trim() || locals.user.emoji || '👑';
+    const emoji = data.get('emoji')?.toString().trim() || '👑';
+    const avatarUrl = data.get('avatarUrl')?.toString().trim() || null;
 
     const finalName = houseName || `Casa de ${locals.user.name}`;
 
@@ -157,6 +164,7 @@ export const actions = {
       lifetimePoints: 0,
       currentStreak: 0,
       emoji,
+      avatarUrl,
       lastActiveDate: new Date()
     });
 

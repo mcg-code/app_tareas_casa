@@ -22,6 +22,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       description: auditLogs.description,
       createdAt: auditLogs.createdAt,
       emoji: houseMembers.emoji,
+      avatarUrl: houseMembers.avatarUrl,
       userName: users.name
     })
     .from(auditLogs)

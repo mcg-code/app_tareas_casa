@@ -1,7 +1,8 @@
 <script lang="ts">
   import { Trophy, CheckCircle, ArrowRight, Trash2, Users, UserPlus, Check, X, LogOut } from '@lucide/svelte';
+  import Avatar from '$lib/components/Avatar.svelte';
   
-  type Member = { id: string, name: string, emoji: string };
+  type Member = { id: string, name: string, emoji: string, avatarUrl?: string | null };
 
   let { 
     task, 
@@ -143,13 +144,11 @@
           </span>
         {/if}
 
-        <!-- Emojis de participantes -->
+        <!-- Emojis y fotos de participantes -->
         {#if assigneeCount > 0}
           <div class="flex items-center -space-x-1.5 ml-1" title={effectiveAssignees.map((a: Member) => a.name).join(', ')}>
             {#each effectiveAssignees as member}
-              <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-navy-bg border border-white/20 text-xs shadow-sm" title={member.name}>
-                {member.emoji || '👤'}
-              </span>
+              <Avatar src={member.avatarUrl} emoji={member.emoji || '👤'} size="xs" alt={member.name} class="ring-1 ring-navy-bg" />
             {/each}
           </div>
         {/if}
@@ -266,7 +265,7 @@
             class="w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left {isSelected ? 'bg-accent-cyan/15 border-accent-cyan/50 text-white shadow-glow-sm' : 'bg-navy-bg/60 border-white/5 text-gray-300 hover:bg-white/5'}"
           >
             <div class="flex items-center gap-3">
-              <span class="text-xl w-9 h-9 flex items-center justify-center rounded-xl bg-navy-surface border border-white/5 shadow-inner">{member.emoji}</span>
+              <Avatar src={member.avatarUrl} emoji={member.emoji || '👤'} size="sm" />
               <span class="font-medium text-sm">{member.name}</span>
             </div>
             {#if isSelected}

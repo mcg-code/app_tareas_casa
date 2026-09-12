@@ -1,10 +1,18 @@
 <script lang="ts">
   import { Trophy, Flame, ListTodo, Plus, ArrowRight, Home, LogOut, Check, Sparkles } from '@lucide/svelte';
+  import Avatar from '$lib/components/Avatar.svelte';
+  import AvatarPicker from '$lib/components/AvatarPicker.svelte';
   
   let { data, form } = $props();
 
   let showJoinModal = $state(false);
   let showCreateModal = $state(false);
+
+  let joinEmoji = $state(data.user?.emoji || '👤');
+  let joinAvatarUrl = $state(data.user?.avatarUrl || '');
+
+  let createEmoji = $state(data.user?.emoji || '👑');
+  let createAvatarUrl = $state(data.user?.avatarUrl || '');
 </script>
 
 <div class="h-full w-full flex flex-col relative z-10 pt-4 pb-20 max-w-md mx-auto">
@@ -17,9 +25,7 @@
       <p class="text-xs text-gray-400 mt-0.5">Hola {data.user?.name}, gestiona tus hogares</p>
     </div>
     
-    <div class="w-10 h-10 bg-navy-surface rounded-xl flex items-center justify-center text-xl border border-white/5 shadow-inner">
-      {data.user?.emoji || '👤'}
-    </div>
+    <Avatar src={data.user?.avatarUrl} emoji={data.user?.emoji} size="md" />
   </header>
 
   {#if form?.error}
@@ -49,9 +55,7 @@
       >
         <div class="flex items-start justify-between mb-3">
           <div class="flex items-center gap-3">
-            <div class="w-11 h-11 bg-navy-bg rounded-xl flex items-center justify-center text-2xl border border-white/5">
-              {house.emoji || '🏠'}
-            </div>
+            <Avatar src={house.avatarUrl} emoji={house.emoji || '🏠'} size="lg" />
             <div>
               <h3 class="font-bold text-gray-100 text-base flex items-center gap-2">
                 {house.houseName}
@@ -170,16 +174,7 @@
           />
         </div>
 
-        <div class="space-y-1.5">
-          <label for="join_emoji" class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tu Icono en esta Casa</label>
-          <input
-            type="text"
-            id="join_emoji"
-            name="emoji"
-            value={data.user?.emoji || '👤'}
-            class="w-full bg-navy-bg px-4 py-3 rounded-xl border border-white/10 text-white text-center text-xl focus:border-accent-cyan outline-none"
-          />
-        </div>
+        <AvatarPicker bind:emoji={joinEmoji} bind:avatarUrl={joinAvatarUrl} label="Tu foto o icono en esta casa" />
 
         <div class="flex gap-2 pt-2">
           <button
@@ -230,16 +225,7 @@
           />
         </div>
 
-        <div class="space-y-1.5">
-          <label for="create_emoji" class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tu Icono de Creador</label>
-          <input
-            type="text"
-            id="create_emoji"
-            name="emoji"
-            value={data.user?.emoji || '👑'}
-            class="w-full bg-navy-bg px-4 py-3 rounded-xl border border-white/10 text-white text-center text-xl focus:border-accent-orange outline-none"
-          />
-        </div>
+        <AvatarPicker bind:emoji={createEmoji} bind:avatarUrl={createAvatarUrl} label="Tu foto o icono en esta casa" />
 
         <div class="flex gap-2 pt-2">
           <button
