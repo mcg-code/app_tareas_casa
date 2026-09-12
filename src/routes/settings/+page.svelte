@@ -21,7 +21,7 @@
     {
       id: 'warm-peach',
       name: 'Melocotón Cálido',
-      subtitle: 'Estilo foto: café espresso & salmón pastel',
+      subtitle: 'Café espresso & salmón pastel',
       icon: '🍑',
       bg: '#15100e',
       surface: '#241c19',
@@ -248,7 +248,7 @@
                   <span class="font-bold text-xs text-white truncate">{th.name}</span>
                   {#if th.id === 'warm-peach'}
                     <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-accent-cyan text-navy-bg tracking-wide shrink-0">
-                      Foto
+                      Predeterminado
                     </span>
                   {/if}
                 </div>
