@@ -23,20 +23,26 @@
       };
       const currentColor = themeColors[activeTheme] || '#15100e';
 
-      // Actualizar TODOS los tags meta[name="theme-color"] (incluidos los generados por PWA)
+      // Asegurar fondo en html y body para la barra de estado y muesca
+      document.documentElement.style.backgroundColor = currentColor;
+      if (document.body) document.body.style.backgroundColor = currentColor;
+
+      // Actualizar TODOS los tags meta[name="theme-color"] y forzar repintado en Chrome / WebAPK
       const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]');
       if (metaThemeColors.length > 0) {
-        metaThemeColors.forEach(m => m.setAttribute('content', currentColor));
+        metaThemeColors.forEach(m => {
+          m.setAttribute('content', currentColor);
+          if (m.parentNode) {
+            m.parentNode.appendChild(m.parentNode.removeChild(m));
+          }
+        });
       } else {
         const meta = document.createElement('meta');
+        meta.id = 'theme-color-meta';
         meta.name = 'theme-color';
         meta.content = currentColor;
         document.head.appendChild(meta);
       }
-
-      // Asegurar fondo en html y body para la barra de estado y muesca
-      document.documentElement.style.backgroundColor = currentColor;
-      document.body.style.backgroundColor = currentColor;
     }
   });
 </script>

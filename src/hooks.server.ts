@@ -128,16 +128,19 @@ export const handle: Handle = async ({ event, resolve }) => {
               enablePoints: legacyHouse.enablePoints ?? true,
               enableQuarantine: legacyHouse.enableQuarantine ?? true,
               enableDueDates: legacyHouse.enableDueDates ?? false,
-              enableInventory: legacyHouse.enableInventory ?? false
+              enableInventory: legacyHouse.enableInventory ?? false,
+              enableTaskCategories: legacyHouse.enableTaskCategories ?? true,
+              enableInventoryLocations: legacyHouse.enableInventoryLocations ?? true,
+              theme: legacyHouse.theme || 'warm-peach'
             }
           };
-          return resolve(event);
         }
       }
 
-      event.locals.user = null;
-      event.cookies.delete('session', { path: '/' });
-      event.cookies.delete('active_member', { path: '/' });
+      if (!event.locals.user) {
+        event.cookies.delete('session', { path: '/' });
+        event.cookies.delete('active_member', { path: '/' });
+      }
     }
   } catch (error) {
     console.error("Auth error", error);
@@ -158,6 +161,7 @@ export const handle: Handle = async ({ event, resolve }) => {
     transformPageChunk: ({ html }) => {
       return html
         .replace('data-theme="warm-peach"', `data-theme="${houseTheme}"`)
+        .replace('style="background-color: #15100e;"', `style="background-color: ${currentThemeColor};"`)
         .replace('content="#15100e" id="theme-color-meta"', `content="${currentThemeColor}" id="theme-color-meta"`);
     }
   });

@@ -72,6 +72,21 @@
       try {
         localStorage.setItem('app_theme', themeId);
       } catch (e) {}
+
+      const th = themes.find(t => t.id === themeId);
+      if (th) {
+        document.documentElement.style.backgroundColor = th.bg;
+        if (document.body) document.body.style.backgroundColor = th.bg;
+        const metas = document.querySelectorAll('meta[name="theme-color"]');
+        if (metas.length > 0) {
+          metas.forEach(m => {
+            m.setAttribute('content', th.bg);
+            if (m.parentNode) {
+              m.parentNode.appendChild(m.parentNode.removeChild(m));
+            }
+          });
+        }
+      }
     }
     triggerAutoSave();
   }
