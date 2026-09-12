@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ locals }) => {
   const houseId = locals.user.houseId;
 
   // Cargar los últimos 50 eventos
-  const logs = await db
+  const rawLogs = await db
     .select({
       id: auditLogs.id,
       actionType: auditLogs.actionType,
@@ -23,6 +23,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       createdAt: auditLogs.createdAt,
       emoji: houseMembers.emoji,
       avatarUrl: houseMembers.avatarUrl,
+      displayName: houseMembers.displayName,
       userName: users.name
     })
     .from(auditLogs)
@@ -31,6 +32,11 @@ export const load: PageServerLoad = async ({ locals }) => {
     .where(eq(auditLogs.houseId, houseId))
     .orderBy(desc(auditLogs.createdAt))
     .limit(50);
+
+  const logs = rawLogs.map(l => ({
+    ...l,
+    userName: l.displayName || l.userName || 'Alguien'
+  }));
 
   return {
     activities: logs

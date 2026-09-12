@@ -8,9 +8,11 @@
   let showJoinModal = $state(false);
   let showCreateModal = $state(false);
 
+  let joinDisplayName = $state(data.user?.name || '');
   let joinEmoji = $state(data.user?.emoji || '👤');
   let joinAvatarUrl = $state(data.user?.avatarUrl || '');
 
+  let createDisplayName = $state(data.user?.name || '');
   let createEmoji = $state(data.user?.emoji || '👑');
   let createAvatarUrl = $state(data.user?.avatarUrl || '');
 </script>
@@ -65,7 +67,9 @@
                   </span>
                 {/if}
               </h3>
-              <p class="text-xs text-gray-500 font-mono">Código: {house.houseCode}</p>
+              <p class="text-xs text-gray-400">
+                <span class="text-gray-500">Tú:</span> <span class="text-white font-medium">{house.displayName || data.user?.name}</span> • <span class="font-mono text-gray-500">{house.houseCode}</span>
+              </p>
             </div>
           </div>
         </div>
@@ -174,6 +178,19 @@
           />
         </div>
 
+        <div class="space-y-1.5">
+          <label for="join_display_name" class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tu nombre en esta casa</label>
+          <input
+            type="text"
+            id="join_display_name"
+            name="displayName"
+            bind:value={joinDisplayName}
+            placeholder="Ej: Papá, Manu, Mamá..."
+            class="w-full bg-navy-bg px-4 py-3 rounded-xl border border-white/10 text-white font-medium focus:border-accent-cyan outline-none"
+            required
+          />
+        </div>
+
         <AvatarPicker bind:emoji={joinEmoji} bind:avatarUrl={joinAvatarUrl} label="Tu foto o icono en esta casa" />
 
         <div class="flex gap-2 pt-2">
@@ -220,6 +237,19 @@
             id="create_name"
             name="houseName"
             placeholder="Ej: Piso Playa, Casa Papá..."
+            class="w-full bg-navy-bg px-4 py-3 rounded-xl border border-white/10 text-white font-medium focus:border-accent-orange outline-none"
+            required
+          />
+        </div>
+
+        <div class="space-y-1.5">
+          <label for="create_display_name" class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tu nombre en esta casa</label>
+          <input
+            type="text"
+            id="create_display_name"
+            name="displayName"
+            bind:value={createDisplayName}
+            placeholder="Ej: Papá, Manu, Mamá..."
             class="w-full bg-navy-bg px-4 py-3 rounded-xl border border-white/10 text-white font-medium focus:border-accent-orange outline-none"
             required
           />

@@ -19,7 +19,8 @@ export const load: PageServerLoad = async ({ locals }) => {
     .select({
       id: houseMembers.id,
       userId: houseMembers.userId,
-      name: users.name,
+      username: users.name,
+      displayName: houseMembers.displayName,
       emoji: houseMembers.emoji,
       avatarUrl: houseMembers.avatarUrl,
       points: houseMembers.points,
@@ -51,6 +52,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
     return {
       ...m,
+      name: m.displayName || m.username || 'Alguien',
+      username: m.username,
+      displayName: m.displayName,
       isCurrent: m.id === locals.user?.memberId,
       assignedTasksCount: assignedTasks.length,
       assignedTasks: assignedTasks.slice(0, 3).map(t => t.title),
@@ -85,10 +89,12 @@ export const actions = {
     if (!locals.user || !locals.user.memberId) return fail(401);
     const memberId = locals.user.memberId;
     const data = await request.formData();
+    const displayName = data.get('displayName')?.toString().trim();
     const emoji = data.get('emoji')?.toString().trim() || '👤';
     const avatarUrl = data.get('avatarUrl')?.toString().trim() || null;
 
     await db.update(houseMembers).set({
+      ...(displayName ? { displayName } : {}),
       emoji,
       avatarUrl,
       lastActiveDate: new Date()

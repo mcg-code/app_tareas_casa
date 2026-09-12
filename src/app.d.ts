@@ -6,7 +6,9 @@ declare global {
 		interface Locals {
 			user: {
 				userId: string;
+				username: string;
 				name: string;
+				displayName?: string | null;
 				emoji: string;
 				avatarUrl?: string | null;
 				memberId?: string | null;

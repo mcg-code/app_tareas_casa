@@ -11,11 +11,13 @@
   let isEditingMyAvatar = $state(false);
 
   const currentMember = $derived(data.members.find(m => m.isCurrent));
+  let myDisplayName = $state('');
   let myEmoji = $state('👤');
   let myAvatarUrl = $state('');
 
   function openEditMyAvatar() {
     if (currentMember) {
+      myDisplayName = currentMember.displayName || currentMember.name || '';
       myEmoji = currentMember.emoji || '👤';
       myAvatarUrl = currentMember.avatarUrl || '';
     }
@@ -52,9 +54,9 @@
         <button
           onclick={openEditMyAvatar}
           class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-accent-cyan rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
-          title="Personalizar mi foto o icono para esta casa"
+          title="Personalizar mi perfil (nombre y foto) para esta casa"
         >
-          <Camera size={14} /> Mi Foto
+          <Camera size={14} /> Mi Perfil
         </button>
 
         <a 
@@ -118,10 +120,23 @@
     <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-navy-surface border border-white/10 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <Camera size={18} class="text-accent-cyan" /> Mi Foto o Icono en esta Casa
+          <Camera size={18} class="text-accent-cyan" /> Mi Perfil en esta Casa
         </h3>
 
         <form method="POST" action="?/updateProfile" class="space-y-4">
+          <div class="space-y-1.5">
+            <label for="profile_display_name" class="text-xs font-bold text-gray-400 uppercase tracking-wider">Tu Nombre en esta Casa</label>
+            <input
+              type="text"
+              id="profile_display_name"
+              name="displayName"
+              bind:value={myDisplayName}
+              placeholder="Ej: Papá, Manu, Mamá..."
+              class="w-full bg-navy-bg px-4 py-3 rounded-xl border border-white/10 text-white font-medium focus:border-accent-cyan outline-none"
+              required
+            />
+          </div>
+
           <AvatarPicker bind:emoji={myEmoji} bind:avatarUrl={myAvatarUrl} label="Elige cómo te verán los demás" />
 
           <div class="flex gap-2 pt-2">
@@ -164,6 +179,9 @@
             <div>
               <h3 class="font-bold text-gray-100 flex items-center gap-2">
                 {member.name || 'Alguien'}
+                {#if member.username && member.username !== member.name}
+                  <span class="text-xs font-normal text-gray-400">(@{member.username})</span>
+                {/if}
                 {#if member.isCurrent}
                   <span class="text-[9px] bg-accent-cyan/20 text-accent-cyan px-1.5 py-0.5 rounded font-bold uppercase">Tú</span>
                 {/if}

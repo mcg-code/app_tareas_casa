@@ -20,6 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       houseId: houseMembers.houseId,
       houseName: houses.name,
       houseCode: houses.code,
+      displayName: houseMembers.displayName,
       emoji: houseMembers.emoji,
       avatarUrl: houseMembers.avatarUrl,
       points: houseMembers.points,
@@ -91,6 +92,7 @@ export const actions = {
     if (!locals.user) return fail(401);
     const data = await request.formData();
     const code = data.get('code')?.toString().toUpperCase().trim();
+    const displayName = data.get('displayName')?.toString().trim() || locals.user.username || locals.user.name;
     const emoji = data.get('emoji')?.toString().trim() || '👤';
     const avatarUrl = data.get('avatarUrl')?.toString().trim() || null;
 
@@ -119,6 +121,7 @@ export const actions = {
         id: activeMemberId,
         userId: locals.user.userId,
         houseId: house.id,
+        displayName,
         points: 0,
         lifetimePoints: 0,
         currentStreak: 0,
@@ -128,7 +131,7 @@ export const actions = {
       });
     } else {
       activeMemberId = member.id;
-      await db.update(houseMembers).set({ emoji, avatarUrl, lastActiveDate: new Date() }).where(eq(houseMembers.id, member.id));
+      await db.update(houseMembers).set({ displayName, emoji, avatarUrl, lastActiveDate: new Date() }).where(eq(houseMembers.id, member.id));
     }
 
     cookies.set('active_member', activeMemberId, {
@@ -146,10 +149,11 @@ export const actions = {
     if (!locals.user) return fail(401);
     const data = await request.formData();
     const houseName = data.get('houseName')?.toString().trim();
+    const displayName = data.get('displayName')?.toString().trim() || locals.user.username || locals.user.name;
     const emoji = data.get('emoji')?.toString().trim() || '👑';
     const avatarUrl = data.get('avatarUrl')?.toString().trim() || null;
 
-    const finalName = houseName || `Casa de ${locals.user.name}`;
+    const finalName = houseName || `Casa de ${displayName}`;
 
     const houseId = generateId();
     const joinCode = generateHouseCode();
@@ -160,6 +164,7 @@ export const actions = {
       id: memberId,
       userId: locals.user.userId,
       houseId,
+      displayName,
       points: 0,
       lifetimePoints: 0,
       currentStreak: 0,

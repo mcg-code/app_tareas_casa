@@ -55,13 +55,13 @@
         <form method="POST" action="?/login" class="space-y-4 bg-navy-surface/60 p-5 rounded-2xl border border-white/5 shadow-glass">
           <div class="space-y-1.5">
             <label for="login_user" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
-              <User size={12} /> Usuario o Nombre
+              <User size={12} /> Usuario único
             </label>
             <input 
               type="text" 
               id="login_user" 
               name="username" 
-              placeholder="Ej: Manu, Papá..." 
+              placeholder="Ej: manu, laura12, papa_dev..." 
               value={form?.username || ''}
               class="w-full bg-navy-bg px-4 py-3.5 rounded-xl border border-white/10 focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan text-white placeholder-gray-600 outline-none transition-all font-medium"
               required
@@ -97,13 +97,13 @@
         <form method="POST" action="?/register" class="space-y-4 bg-navy-surface/60 p-5 rounded-2xl border border-white/5 shadow-glass">
           <div class="space-y-1.5">
             <label for="reg_user" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
-              <User size={12} /> Tu Nombre o Usuario
+              <User size={12} /> Usuario único (para acceder)
             </label>
             <input 
               type="text" 
               id="reg_user" 
               name="username" 
-              placeholder="Ej: Manu, Laura..." 
+              placeholder="Ej: manu, laura12, papa_dev..." 
               value={form?.username || ''}
               class="w-full bg-navy-bg px-4 py-3.5 rounded-xl border border-white/10 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all font-medium"
               required
@@ -127,8 +127,8 @@
             />
           </div>
 
-          <p class="text-[11px] text-gray-500 text-center leading-relaxed">
-            📸 Podrás elegir tu foto de perfil o icono para cada casa al crearla o unirte.
+          <p class="text-[11px] text-gray-400 text-center leading-relaxed bg-navy-bg/50 p-2.5 rounded-xl border border-white/5">
+            💡 En cada casa podrás elegir tu <strong class="text-white">nombre visible</strong> (ej: Papá, Manu) y tu <strong class="text-white">foto</strong> al unirte o crearla.
           </p>
 
           <button 

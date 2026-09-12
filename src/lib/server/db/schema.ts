@@ -18,6 +18,7 @@ export const houseMembers = sqliteTable('house_members', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
   houseId: text('house_id').notNull().references(() => houses.id),
+  displayName: text('display_name'),
   emoji: text('emoji').default('👤'),
   avatarUrl: text('avatar_url'),
   points: integer('points').default(0),

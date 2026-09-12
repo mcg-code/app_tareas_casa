@@ -90,6 +90,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     .select({
       id: houseMembers.id,
       name: users.name,
+      displayName: houseMembers.displayName,
       emoji: houseMembers.emoji,
       avatarUrl: houseMembers.avatarUrl
     })
@@ -104,6 +105,7 @@ export const load: PageServerLoad = async ({ locals }) => {
       taskId: taskAssignees.taskId,
       memberId: taskAssignees.memberId,
       name: users.name,
+      displayName: houseMembers.displayName,
       emoji: houseMembers.emoji,
       avatarUrl: houseMembers.avatarUrl
     })
@@ -128,13 +130,13 @@ export const load: PageServerLoad = async ({ locals }) => {
   const todayTasks = rawTodayTasks.map(t => {
     let assigneesForTask = allTaskAssignees
       .filter(a => a.taskId === t.id)
-      .map(a => ({ id: a.memberId, name: a.name, emoji: a.emoji || '👤', avatarUrl: a.avatarUrl }));
+      .map(a => ({ id: a.memberId, name: a.displayName || a.name, emoji: a.emoji || '👤', avatarUrl: a.avatarUrl }));
 
     // Si no hay asignaciones en taskAssignees pero hay assignedToId histórico
     if (assigneesForTask.length === 0 && t.assignedToId) {
       const m = currentHouseMembers.find(member => member.id === t.assignedToId);
       if (m) {
-        assigneesForTask = [{ id: m.id, name: m.name, emoji: m.emoji || '👤', avatarUrl: m.avatarUrl }];
+        assigneesForTask = [{ id: m.id, name: m.displayName || m.name, emoji: m.emoji || '👤', avatarUrl: m.avatarUrl }];
       }
     }
 
@@ -171,7 +173,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
   return {
     tasks: todayTasks,
-    houseMembers: currentHouseMembers.map(m => ({ id: m.id, name: m.name, emoji: m.emoji || '👤', avatarUrl: m.avatarUrl })),
+    houseMembers: currentHouseMembers.map(m => ({ id: m.id, name: m.displayName || m.name, emoji: m.emoji || '👤', avatarUrl: m.avatarUrl })),
     quarantine: quarantineWithVotes,
     userId: currentMemberId,
     houseName: locals.user.houseName
@@ -372,7 +374,7 @@ export const actions = {
       const m = await db.select().from(houseMembers).where(eq(houseMembers.id, a.memberId)).get();
       if (m) {
         const u = await db.select().from(users).where(eq(users.id, m.userId)).get();
-        assigneeMembers.push({ member: m, userName: u?.name || 'Alguien' });
+        assigneeMembers.push({ member: m, userName: m.displayName || u?.name || 'Alguien' });
       }
     }
 

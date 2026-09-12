@@ -32,7 +32,9 @@ export const handle: Handle = async ({ event, resolve }) => {
         if (houseRecord) {
           event.locals.user = {
             userId: userRecord.id,
-            name: userRecord.name,
+            username: userRecord.name,
+            name: activeMembership.displayName || userRecord.name,
+            displayName: activeMembership.displayName || userRecord.name,
             emoji: activeMembership.emoji || userRecord.emoji || '👤',
             avatarUrl: activeMembership.avatarUrl || userRecord.avatarUrl || null,
             memberId: activeMembership.id,
@@ -44,7 +46,9 @@ export const handle: Handle = async ({ event, resolve }) => {
         } else {
           event.locals.user = {
             userId: userRecord.id,
+            username: userRecord.name,
             name: userRecord.name,
+            displayName: userRecord.name,
             emoji: userRecord.emoji || '👤',
             avatarUrl: userRecord.avatarUrl || null,
             memberId: null,
@@ -58,7 +62,9 @@ export const handle: Handle = async ({ event, resolve }) => {
         // Usuario logueado pero sin casas todavía
         event.locals.user = {
           userId: userRecord.id,
+          username: userRecord.name,
           name: userRecord.name,
+          displayName: userRecord.name,
           emoji: userRecord.emoji || '👤',
           avatarUrl: userRecord.avatarUrl || null,
           memberId: null,
@@ -91,8 +97,11 @@ export const handle: Handle = async ({ event, resolve }) => {
         if (legacyUser && legacyHouse) {
           event.locals.user = {
             userId: legacyUser.id,
-            name: legacyUser.name,
+            username: legacyUser.name,
+            name: legacyMember.displayName || legacyUser.name,
+            displayName: legacyMember.displayName || legacyUser.name,
             emoji: legacyMember.emoji || legacyUser.emoji || '👤',
+            avatarUrl: legacyMember.avatarUrl || legacyUser.avatarUrl || null,
             memberId: legacyMember.id,
             houseId: legacyHouse.id,
             houseCode: legacyHouse.code,
