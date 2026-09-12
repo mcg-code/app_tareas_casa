@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
-  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock, Package, Plus, Trash2, Edit2, X } from '@lucide/svelte';
+  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock, Package, Plus, Trash2, Edit2, X, Boxes } from '@lucide/svelte';
   
   let { data, form } = $props();
 
@@ -10,6 +10,7 @@
   let pointsActive = $state(data.settings?.enablePoints ?? true);
   let quarantineActive = $state(data.settings?.enableQuarantine ?? true);
   let dueDatesActive = $state(data.settings?.enableDueDates ?? false);
+  let inventoryActive = $state(data.settings?.enableInventory ?? false);
   let showSavedNotification = $state(false);
   let isSaving = $state(false);
 
@@ -62,6 +63,7 @@
       pointsActive = data.settings.enablePoints ?? true;
       quarantineActive = data.settings.enableQuarantine ?? true;
       dueDatesActive = data.settings.enableDueDates ?? false;
+      inventoryActive = data.settings.enableInventory ?? false;
     }
   });
 
@@ -254,6 +256,32 @@
           bind:checked={dueDatesActive} 
           onchange={triggerAutoSave}
           class="w-5 h-5 accent-indigo-400 rounded-md cursor-pointer mt-1" 
+        />
+      </div>
+    </label>
+
+    <!-- Inventario y Lista de la Compra -->
+    <label class="block cursor-pointer bg-navy-surface p-4 rounded-2xl border transition-all {inventoryActive ? 'border-amber-400/40 bg-navy-surface/90' : 'border-white/5 opacity-70'} hover:border-white/20">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="p-2.5 rounded-xl {inventoryActive ? 'bg-amber-400/20 text-amber-400' : 'bg-white/5 text-gray-500'} transition-colors">
+            <Boxes size={22} />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-white">Inventario y Lista de la Compra</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+              Gestiona comida o material por cajones (congelador, nevera, despensa) y sincroniza automáticamente las cosas que se acaban con la lista de la compra.
+            </p>
+          </div>
+        </div>
+        <input 
+          type="checkbox" 
+          name="enableInventory" 
+          bind:checked={inventoryActive} 
+          onchange={triggerAutoSave}
+          class="w-5 h-5 accent-amber-400 rounded-md cursor-pointer mt-1" 
         />
       </div>
     </label>

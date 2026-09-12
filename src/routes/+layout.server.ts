@@ -25,7 +25,8 @@ export const load: LayoutServerLoad = async ({ locals, depends }) => {
         enableFeed: house.enableFeed ?? true,
         enablePoints: house.enablePoints ?? true,
         enableQuarantine: house.enableQuarantine ?? true,
-        enableDueDates: house.enableDueDates ?? false
+        enableDueDates: house.enableDueDates ?? false,
+        enableInventory: house.enableInventory ?? false
       };
     }
   }

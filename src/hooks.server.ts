@@ -49,7 +49,8 @@ export const handle: Handle = async ({ event, resolve }) => {
               enableFeed: houseRecord.enableFeed ?? true,
               enablePoints: houseRecord.enablePoints ?? true,
               enableQuarantine: houseRecord.enableQuarantine ?? true,
-              enableDueDates: houseRecord.enableDueDates ?? false
+              enableDueDates: houseRecord.enableDueDates ?? false,
+              enableInventory: houseRecord.enableInventory ?? false
             }
           };
         } else {
@@ -123,7 +124,8 @@ export const handle: Handle = async ({ event, resolve }) => {
               enableFeed: legacyHouse.enableFeed ?? true,
               enablePoints: legacyHouse.enablePoints ?? true,
               enableQuarantine: legacyHouse.enableQuarantine ?? true,
-              enableDueDates: legacyHouse.enableDueDates ?? false
+              enableDueDates: legacyHouse.enableDueDates ?? false,
+              enableInventory: legacyHouse.enableInventory ?? false
             }
           };
           return resolve(event);

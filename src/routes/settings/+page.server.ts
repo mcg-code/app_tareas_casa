@@ -35,7 +35,8 @@ export const load: PageServerLoad = async ({ locals }) => {
       enableFeed: house.enableFeed ?? true,
       enablePoints: house.enablePoints ?? true,
       enableQuarantine: house.enableQuarantine ?? true,
-      enableDueDates: house.enableDueDates ?? false
+      enableDueDates: house.enableDueDates ?? false,
+      enableInventory: house.enableInventory ?? false
     }
   };
 };
@@ -52,13 +53,15 @@ export const actions = {
     const enablePoints = data.get('enablePoints') === 'on';
     const enableQuarantine = data.get('enableQuarantine') === 'on';
     const enableDueDates = data.get('enableDueDates') === 'on';
+    const enableInventory = data.get('enableInventory') === 'on';
 
     await db.update(houses).set({
       enableStore,
       enableFeed,
       enablePoints,
       enableQuarantine,
-      enableDueDates
+      enableDueDates,
+      enableInventory
     }).where(eq(houses.id, houseId));
 
     if (locals.user) {
@@ -67,7 +70,8 @@ export const actions = {
         enableFeed,
         enablePoints,
         enableQuarantine,
-        enableDueDates
+        enableDueDates,
+        enableInventory
       };
     }
 
@@ -78,7 +82,8 @@ export const actions = {
         enableFeed,
         enablePoints,
         enableQuarantine,
-        enableDueDates
+        enableDueDates,
+        enableInventory
       }
     };
   },

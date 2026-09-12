@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { ListTodo, Trophy, Store, Users } from '@lucide/svelte';
+  import { ListTodo, Trophy, Store, Users, Boxes } from '@lucide/svelte';
   import { page } from '$app/stores';
   
   let currentPath = $derived($page.url.pathname);
   let settings = $derived($page.data.user?.settings);
   let showStore = $derived(settings?.enableStore !== false);
   let showFeed = $derived(settings?.enableFeed !== false);
+  let showInventory = $derived(settings?.enableInventory === true);
 </script>
 
 <nav class="fixed bottom-0 w-full max-w-md mx-auto bg-navy-surface/90 backdrop-blur-md border-t border-white/5 rounded-t-3xl pb-safe pt-2 px-6 z-50">
@@ -16,6 +17,15 @@
         <span class="text-[10px] font-medium tracking-wide">Tareas</span>
       </a>
     </li>
+
+    {#if showInventory}
+      <li>
+        <a href="/inventory" class="flex flex-col items-center gap-1 transition-all duration-300 {currentPath.includes('/inventory') ? 'text-amber-400 scale-110 drop-shadow-glow' : 'text-gray-400 hover:text-gray-200'}">
+          <Boxes size={24} strokeWidth={currentPath.includes('/inventory') ? 2.5 : 2} />
+          <span class="text-[10px] font-medium tracking-wide">Inventario</span>
+        </a>
+      </li>
+    {/if}
 
     {#if showStore}
       <li>

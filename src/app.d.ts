@@ -24,6 +24,7 @@ declare global {
 					enablePoints: boolean;
 					enableQuarantine: boolean;
 					enableDueDates: boolean;
+					enableInventory: boolean;
 				};
 			} | null;
 		}

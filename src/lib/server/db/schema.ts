@@ -16,7 +16,8 @@ export const houses = sqliteTable('houses', {
   enableFeed: integer('enable_feed', { mode: 'boolean' }).default(true),
   enablePoints: integer('enable_points', { mode: 'boolean' }).default(true),
   enableQuarantine: integer('enable_quarantine', { mode: 'boolean' }).default(true),
-  enableDueDates: integer('enable_due_dates', { mode: 'boolean' }).default(false)
+  enableDueDates: integer('enable_due_dates', { mode: 'boolean' }).default(false),
+  enableInventory: integer('enable_inventory', { mode: 'boolean' }).default(false)
 });
 
 export const houseMembers = sqliteTable('house_members', {
@@ -109,5 +110,29 @@ export const auditLogs = sqliteTable('audit_logs', {
   memberId: text('member_id').references(() => houseMembers.id),
   actionType: text('action_type').notNull(), // 'COMPLETED_TASK', 'BOUGHT_REWARD', 'PASSED_TASK', 'UNFROZEN_POINTS'
   description: text('description').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+});
+
+export const inventoryLocations = sqliteTable('inventory_locations', {
+  id: text('id').primaryKey(),
+  houseId: text('house_id').notNull().references(() => houses.id),
+  name: text('name').notNull(),
+  icon: text('icon').default('🧊'),
+  order: integer('order').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
+});
+
+export const inventoryItems = sqliteTable('inventory_items', {
+  id: text('id').primaryKey(),
+  houseId: text('house_id').notNull().references(() => houses.id),
+  locationId: text('location_id').references(() => inventoryLocations.id),
+  name: text('name').notNull(),
+  icon: text('icon').default('📦'),
+  quantity: integer('quantity').notNull().default(1),
+  unit: text('unit'), // 'uds', 'kg', 'L', 'paquete', etc.
+  inStock: integer('in_stock', { mode: 'boolean' }).notNull().default(true),
+  neededInShoppingList: integer('needed_in_shopping_list', { mode: 'boolean' }).notNull().default(false),
+  shoppingQuantity: integer('shopping_quantity').notNull().default(1),
+  isBought: integer('is_bought', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
 });
