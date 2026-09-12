@@ -1,30 +1,10 @@
 import { fail, redirect, type Cookies } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { users, houses, houseMembers, tasks } from '$lib/server/db/schema';
+import { users, houses, houseMembers, tasks, taskAssignees } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { generateId, generateHouseCode } from '$lib/server/utils';
 
-function rememberMember(cookies: Cookies, memberId: string) {
-  let list: string[] = [];
-  try {
-    const raw = cookies.get('saved_members');
-    if (raw) list = JSON.parse(raw);
-  } catch {
-    list = [];
-  }
-  if (!list.includes(memberId)) {
-    list.unshift(memberId);
-  }
-  list = list.slice(0, 8);
-  cookies.set('saved_members', JSON.stringify(list), {
-    path: '/',
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: false,
-    maxAge: 60 * 60 * 24 * 365 * 2
-  });
-}
 
 export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
@@ -57,8 +37,13 @@ export const load: PageServerLoad = async ({ locals }) => {
     .from(tasks)
     .where(eq(tasks.status, 'pending'));
 
+  const allAssignees = await db.select().from(taskAssignees);
+
   const housesWithDetails = userMemberships.map((m) => {
-    const assignedCount = allPendingTasks.filter((t) => t.assignedToId === m.memberId).length;
+    const assignedCount = allPendingTasks.filter((t) => {
+      const hasAssignee = allAssignees.some((a) => a.taskId === t.id && a.memberId === m.memberId);
+      return hasAssignee || t.assignedToId === m.memberId;
+    }).length;
     return {
       ...m,
       isActive: m.memberId === locals.user?.memberId,
@@ -90,7 +75,7 @@ export const actions = {
       return fail(403, { error: 'No tienes acceso a esta casa' });
     }
 
-    cookies.set('session', memberRecord.id, {
+    cookies.set('active_member', memberRecord.id, {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
@@ -98,7 +83,6 @@ export const actions = {
       maxAge: 60 * 60 * 24 * 365
     });
 
-    rememberMember(cookies, memberRecord.id);
     redirect(303, '/tasks');
   },
 
@@ -141,7 +125,7 @@ export const actions = {
       await db.update(houseMembers).set({ emoji, lastActiveDate: new Date() }).where(eq(houseMembers.id, member.id));
     }
 
-    cookies.set('session', member.id, {
+    cookies.set('active_member', member.id, {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
@@ -149,7 +133,6 @@ export const actions = {
       maxAge: 60 * 60 * 24 * 365
     });
 
-    rememberMember(cookies, member.id);
     redirect(303, '/tasks');
   },
 
@@ -177,7 +160,7 @@ export const actions = {
       lastActiveDate: new Date()
     });
 
-    cookies.set('session', memberId, {
+    cookies.set('active_member', memberId, {
       path: '/',
       httpOnly: true,
       sameSite: 'lax',
@@ -185,12 +168,12 @@ export const actions = {
       maxAge: 60 * 60 * 24 * 365
     });
 
-    rememberMember(cookies, memberId);
     redirect(303, '/tasks');
   },
 
   logout: async ({ cookies }) => {
     cookies.delete('session', { path: '/' });
+    cookies.delete('active_member', { path: '/' });
     redirect(303, '/');
   }
 } satisfies Actions;

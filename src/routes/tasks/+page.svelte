@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ListTodo, CheckCircle2, Search, AlertTriangle, ThumbsUp, ThumbsDown } from '@lucide/svelte';
+  import { ListTodo, CheckCircle2, Search, AlertTriangle, ThumbsUp, ThumbsDown, Users } from '@lucide/svelte';
   import TaskCard from '$lib/components/TaskCard.svelte';
   import { invalidateAll } from '$app/navigation';
   import confetti from 'canvas-confetti';
@@ -8,23 +8,50 @@
 
   let activeTab = $state<'today' | 'quarantine'>('today');
 
-  let myTasks = $derived(data.tasks.filter(t => t.assignedToId === data.userId));
-  let unassignedTasks = $derived(data.tasks.filter(t => !t.assignedToId));
+  let myTasks = $derived(
+    data.tasks.filter(t => t.assignees?.some(a => a.id === data.userId) || t.assignedToId === data.userId)
+  );
+  
+  let otherTasks = $derived(
+    data.tasks.filter(t => !(t.assignees?.some(a => a.id === data.userId) || t.assignedToId === data.userId))
+  );
+
+  let teamTasks = $derived(
+    otherTasks.filter(t => (t.assignees && t.assignees.length > 0) || t.assignedToId)
+  );
+
+  let unassignedTasks = $derived(
+    otherTasks.filter(t => (!t.assignees || t.assignees.length === 0) && !t.assignedToId)
+  );
 
   async function handleClaim(id: string) {
     const formData = new FormData();
     formData.append('taskId', id);
-    fetch('?/claim', { method: 'POST', body: formData }).then(() => {
-      invalidateAll();
-    });
+    await fetch('?/claim', { method: 'POST', body: formData });
+    await invalidateAll();
   }
 
-  function handleUnclaim(id: string) {
+  async function handleJoin(id: string) {
     const formData = new FormData();
     formData.append('taskId', id);
-    fetch('?/unclaim', { method: 'POST', body: formData }).then(() => {
-      invalidateAll();
-    });
+    await fetch('?/join', { method: 'POST', body: formData });
+    await invalidateAll();
+  }
+
+  async function handleUnclaim(id: string, memberId?: string) {
+    const formData = new FormData();
+    formData.append('taskId', id);
+    if (memberId) formData.append('memberId', memberId);
+    await fetch('?/unclaim', { method: 'POST', body: formData });
+    await invalidateAll();
+  }
+
+  async function handleToggleAssignee(taskId: string, memberId: string) {
+    const formData = new FormData();
+    formData.append('taskId', taskId);
+    formData.append('memberId', memberId);
+    await fetch('?/toggleAssignee', { method: 'POST', body: formData });
+    await invalidateAll();
   }
 
   async function handleComplete(taskId: string) {
@@ -35,7 +62,8 @@
     
     // Si la tarea es verificada salta confeti, sino mostramos alerta
     if (result.data) {
-      const isVerified = JSON.parse(result.data).find((d: any) => d && d.isVerified !== undefined)?.isVerified;
+      const dataObj = JSON.parse(result.data);
+      const isVerified = dataObj.find((d: any) => d && d.isVerified !== undefined)?.isVerified;
       if (isVerified) {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       } else {
@@ -119,29 +147,73 @@
           <p class="text-gray-400 text-sm max-w-[250px] leading-relaxed">No hay tareas planificadas para hoy. Busca en el catálogo para añadir una.</p>
         </div>
       {:else}
-        <!-- Tareas sin asignar -->
-        {#if unassignedTasks.length > 0}
+        <!-- Tareas Mías (Individuales o en equipo) -->
+        {#if myTasks.length > 0}
           <div class="mb-6 fade-in">
-            <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1 mb-3 ml-1">
-              <ListTodo size={12} /> Para hacer (Sin dueño)
+            <h3 class="text-[10px] font-bold text-accent-cyan uppercase tracking-wider flex items-center gap-1 mb-3 ml-1">
+              <ListTodo size={12} /> Mis Tareas ({myTasks.length})
             </h3>
             <div class="space-y-3">
-              {#each unassignedTasks as task}
-                <TaskCard {task} onClaim={() => handleClaim(task.id)} onComplete={() => handleComplete(task.id)} onRemove={() => handleDelete(task.id)} />
+              {#each myTasks as task}
+                <TaskCard 
+                  {task} 
+                  currentUserId={data.userId}
+                  houseMembers={data.houseMembers}
+                  onClaim={() => handleClaim(task.id)} 
+                  onJoin={() => handleJoin(task.id)}
+                  onUnclaim={() => handleUnclaim(task.id, data.userId)} 
+                  onToggleAssignee={handleToggleAssignee}
+                  onComplete={() => handleComplete(task.id)} 
+                  onRemove={() => handleDelete(task.id)} 
+                />
               {/each}
             </div>
           </div>
         {/if}
 
-        <!-- Tareas Mías -->
-        {#if myTasks.length > 0}
+        <!-- Tareas en marcha de otros (puedes sumarte) -->
+        {#if teamTasks.length > 0}
           <div class="mb-6 fade-in">
-            <h3 class="text-[10px] font-bold text-accent-cyan uppercase tracking-wider flex items-center gap-1 mb-3 ml-1">
-              <ListTodo size={12} /> Mis Tareas
+            <h3 class="text-[10px] font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1 mb-3 ml-1">
+              <Users size={12} /> Tareas en marcha ({teamTasks.length}) · ¡Súmate al equipo!
             </h3>
             <div class="space-y-3">
-              {#each myTasks as task}
-                <TaskCard {task} onClaim={() => handleClaim(task.id)} onUnclaim={() => handleUnclaim(task.id)} onComplete={() => handleComplete(task.id)} onRemove={() => handleDelete(task.id)} />
+              {#each teamTasks as task}
+                <TaskCard 
+                  {task} 
+                  currentUserId={data.userId}
+                  houseMembers={data.houseMembers}
+                  onClaim={() => handleClaim(task.id)} 
+                  onJoin={() => handleJoin(task.id)}
+                  onUnclaim={() => handleUnclaim(task.id, data.userId)} 
+                  onToggleAssignee={handleToggleAssignee}
+                  onComplete={() => handleComplete(task.id)} 
+                  onRemove={() => handleDelete(task.id)} 
+                />
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Tareas sin asignar -->
+        {#if unassignedTasks.length > 0}
+          <div class="mb-6 fade-in">
+            <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1 mb-3 ml-1">
+              <ListTodo size={12} /> Para hacer (Sin dueño) ({unassignedTasks.length})
+            </h3>
+            <div class="space-y-3">
+              {#each unassignedTasks as task}
+                <TaskCard 
+                  {task} 
+                  currentUserId={data.userId}
+                  houseMembers={data.houseMembers}
+                  onClaim={() => handleClaim(task.id)} 
+                  onJoin={() => handleJoin(task.id)}
+                  onUnclaim={() => handleUnclaim(task.id, data.userId)} 
+                  onToggleAssignee={handleToggleAssignee}
+                  onComplete={() => handleComplete(task.id)} 
+                  onRemove={() => handleDelete(task.id)} 
+                />
               {/each}
             </div>
           </div>

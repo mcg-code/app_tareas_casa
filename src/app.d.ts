@@ -5,14 +5,14 @@ declare global {
 		// interface Error {}
 		interface Locals {
 			user: {
-				memberId: string;
 				userId: string;
-				houseId: string;
-				houseCode: string;
-				houseName: string;
 				name: string;
 				emoji: string;
-				points: number;
+				memberId?: string | null;
+				houseId?: string | null;
+				houseCode?: string | null;
+				houseName?: string | null;
+				points?: number;
 			} | null;
 		}
 		// interface PageData {}

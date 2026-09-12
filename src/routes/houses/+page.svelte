@@ -30,7 +30,20 @@
 
   <!-- Listado de casas -->
   <div class="flex-1 overflow-y-auto space-y-3 pr-0.5 mb-6">
-    {#each data.houses as house}
+    {#if data.houses.length === 0}
+      <div class="h-64 flex flex-col items-center justify-center text-center p-6 bg-navy-surface/40 border border-white/5 rounded-3xl space-y-4 my-auto shadow-glass">
+        <div class="w-16 h-16 bg-navy-surface rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-white/5">
+          🏡
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white mb-1">¡Bienvenido, {data.user?.name}!</h3>
+          <p class="text-xs text-gray-400 leading-relaxed max-w-[260px]">
+            Aún no estás en ninguna casa. Puedes crear una nueva para tu familia o unirte a una existente con su código.
+          </p>
+        </div>
+      </div>
+    {:else}
+      {#each data.houses as house}
       <div 
         class="bg-navy-surface p-4 rounded-2xl border transition-all relative {house.isActive ? 'border-accent-cyan/50 shadow-[0_0_20px_rgba(6,182,212,0.15)]' : 'border-white/5 hover:border-white/10'}"
       >
@@ -96,6 +109,7 @@
         {/if}
       </div>
     {/each}
+    {/if}
   </div>
 
   <!-- Botones de Acción inferior -->

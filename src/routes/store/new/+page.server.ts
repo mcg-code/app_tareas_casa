@@ -1,13 +1,22 @@
 import { fail, redirect } from '@sveltejs/kit';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { rewards } from '$lib/server/db/schema';
 import { generateId } from '$lib/server/utils';
+
+export const load: PageServerLoad = async ({ locals }) => {
+  if (!locals.user) redirect(303, '/');
+  if (!locals.user.houseId) redirect(303, '/houses');
+  return {};
+};
 
 export const actions = {
   default: async ({ request, locals }) => {
     if (!locals.user) {
       redirect(303, '/');
+    }
+    if (!locals.user.houseId) {
+      redirect(303, '/houses');
     }
 
     const data = await request.formData();

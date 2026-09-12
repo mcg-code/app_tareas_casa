@@ -9,6 +9,9 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
     redirect(303, '/');
   }
+  if (!locals.user.houseId || !locals.user.memberId) {
+    redirect(303, '/houses');
+  }
 
   const houseId = locals.user.houseId;
   let allRewards = await db.select().from(rewards).where(eq(rewards.houseId, houseId));
@@ -21,7 +24,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions = {
   buy: async ({ request, locals }) => {
-    if (!locals.user) return fail(401);
+    if (!locals.user || !locals.user.houseId || !locals.user.memberId) return fail(401);
+    const houseId = locals.user.houseId;
+    const memberId = locals.user.memberId;
+
     const data = await request.formData();
     const rewardId = data.get('rewardId')?.toString();
     const title = data.get('title')?.toString();
@@ -31,7 +37,7 @@ export const actions = {
 
     const price = parseInt(priceStr);
 
-    const member = await db.select().from(houseMembers).where(eq(houseMembers.id, locals.user.memberId)).get();
+    const member = await db.select().from(houseMembers).where(eq(houseMembers.id, memberId)).get();
     
     if (!member || (member.points || 0) < price) {
       return fail(400, { error: 'No tienes suficientes puntos' });
@@ -45,8 +51,8 @@ export const actions = {
     // Registrar en logs
     await db.insert(auditLogs).values({
       id: generateId(),
-      houseId: locals.user.houseId,
-      memberId: locals.user.memberId,
+      houseId,
+      memberId,
       actionType: 'BOUGHT_REWARD',
       description: `canjeó ${title} (-${price} pts)`,
       createdAt: new Date()

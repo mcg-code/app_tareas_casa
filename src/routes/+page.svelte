@@ -1,50 +1,9 @@
 <script lang="ts">
-  import { ArrowRight, Plus, UserCheck, Trash2, Home, Search, Key } from '@lucide/svelte';
-  import { onMount } from 'svelte';
+  import { ArrowRight, UserPlus, LogIn, Lock, User } from '@lucide/svelte';
   
-  let { data, form } = $props();
+  let { form } = $props();
   
-  let mode = $state('join'); // 'join', 'create', or 'search'
-  let localProfiles = $state<Array<{
-    memberId: string;
-    userName: string;
-    emoji: string;
-    houseName: string;
-    houseCode: string;
-  }>>([]);
-
-  onMount(() => {
-    try {
-      const raw = localStorage.getItem('tf_saved_profiles');
-      if (raw) {
-        localProfiles = JSON.parse(raw);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  });
-
-  // Combinar perfiles del servidor y de localStorage sin duplicados
-  let combinedProfiles = $derived(() => {
-    const list = [...(data.savedProfiles || [])];
-    for (const lp of localProfiles) {
-      if (!list.some((p) => p.memberId === lp.memberId)) {
-        list.push(lp);
-      }
-    }
-    return list;
-  });
-
-  let showOtherOptions = $state(false);
-
-  function forgetLocalProfile(memberId: string) {
-    localProfiles = localProfiles.filter((p) => p.memberId !== memberId);
-    try {
-      localStorage.setItem('tf_saved_profiles', JSON.stringify(localProfiles));
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  let mode = $state<'login' | 'register'>('login');
 </script>
 
 <div class="min-h-screen w-full flex flex-col items-center justify-center p-6 bg-navy-bg relative overflow-y-auto text-gray-100 font-sans z-50 py-10">
@@ -59,229 +18,132 @@
         <span class="text-3xl">🏡</span>
       </div>
       <h1 class="text-3xl font-black tracking-tight text-white">Tareas en Familia</h1>
-      <p class="text-gray-400 font-medium text-sm">Repartiendo el esfuerzo, sin discusiones.</p>
+      <p class="text-gray-400 font-medium text-sm">Gestiona tu hogar y tareas en equipo.</p>
     </div>
 
     {#if form?.error}
-      <div class="bg-red-500/20 border border-red-500/50 text-red-200 p-3 rounded-xl text-sm font-medium text-center">
+      <div class="bg-red-500/20 border border-red-500/50 text-red-200 p-3.5 rounded-xl text-sm font-medium text-center shadow-lg">
         {form.error}
       </div>
     {/if}
 
-    {#if form?.searchError}
-      <div class="bg-amber-500/20 border border-amber-500/50 text-amber-200 p-3 rounded-xl text-sm font-medium text-center">
-        {form.searchError}
+    {#if form?.registerError}
+      <div class="bg-red-500/20 border border-red-500/50 text-red-200 p-3.5 rounded-xl text-sm font-medium text-center shadow-lg">
+        {form.registerError}
       </div>
     {/if}
 
-    <!-- 1. Perfiles guardados en este dispositivo -->
-    {#if combinedProfiles().length > 0}
-      <div class="space-y-3 bg-navy-surface/80 p-4 rounded-2xl border border-white/5 shadow-glass">
-        <div class="flex justify-between items-center px-1">
-          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <UserCheck size={14} class="text-accent-cyan" /> Tus cuentas en este móvil
-          </span>
-        </div>
-
-        <div class="space-y-2">
-          {#each combinedProfiles() as profile}
-            <div class="flex items-center gap-2 bg-navy-bg p-2.5 rounded-xl border border-white/5 hover:border-accent-cyan/30 transition-all group">
-              <form method="POST" action="?/quickLogin" class="flex-1 flex items-center gap-3">
-                <input type="hidden" name="memberId" value={profile.memberId} />
-                <button type="submit" class="flex items-center gap-3 flex-1 text-left">
-                  <div class="w-10 h-10 bg-navy-surface rounded-lg flex items-center justify-center text-xl border border-white/5 shrink-0">
-                    {profile.emoji || '👤'}
-                  </div>
-                  <div class="overflow-hidden">
-                    <span class="font-bold text-white text-sm block truncate">{profile.userName}</span>
-                    <span class="text-[11px] text-accent-cyan font-medium block truncate flex items-center gap-1">
-                      <Home size={10} /> {profile.houseName}
-                    </span>
-                  </div>
-                </button>
-              </form>
-
-              <form 
-                method="POST" 
-                action="?/forgetProfile"
-                onsubmit={() => forgetLocalProfile(profile.memberId)}
-              >
-                <input type="hidden" name="memberId" value={profile.memberId} />
-                <button 
-                  type="submit" 
-                  class="p-2 text-gray-600 hover:text-red-400 rounded-lg transition-colors"
-                  title="Olvidar en este dispositivo"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </form>
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
-
-    <!-- 2. Resultados de búsqueda de casa si se buscó -->
-    {#if form?.searchResults && form.searchResults.length > 0}
-      <div class="space-y-3 bg-navy-surface p-4 rounded-2xl border border-accent-cyan/40 shadow-glow">
-        <span class="text-xs font-bold text-accent-cyan uppercase tracking-wider block">
-          Casas encontradas:
-        </span>
-        <div class="space-y-2">
-          {#each form.searchResults as result}
-            <form method="POST" action="?/quickLogin" class="flex items-center gap-2 bg-navy-bg p-2.5 rounded-xl border border-white/5">
-              <input type="hidden" name="memberId" value={result.memberId} />
-              <button type="submit" class="flex items-center gap-3 flex-1 text-left">
-                <div class="w-10 h-10 bg-navy-surface rounded-lg flex items-center justify-center text-xl border border-white/5 shrink-0">
-                  {result.emoji}
-                </div>
-                <div class="overflow-hidden">
-                  <span class="font-bold text-white text-sm block truncate">{result.userName}</span>
-                  <span class="text-[11px] text-gray-400 font-mono block">
-                    {result.houseName} ({result.houseCode})
-                  </span>
-                </div>
-              </button>
-            </form>
-          {/each}
-        </div>
-      </div>
-    {/if}
-
-    <!-- 3. Selector de Pestañas (Unirme / Crear / Buscar) -->
+    <!-- Selector de Pestañas (Iniciar Sesión / Crear Cuenta) -->
     <div class="space-y-4 pt-1">
       <div class="flex gap-1.5 p-1 bg-navy-surface rounded-2xl border border-white/5 text-xs font-bold">
         <button 
-          onclick={() => mode = 'join'} 
-          class="flex-1 py-2 rounded-xl transition-all {mode === 'join' ? 'bg-navy-bg text-accent-cyan shadow-glass' : 'text-gray-500'}"
+          onclick={() => mode = 'login'} 
+          class="flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 {mode === 'login' ? 'bg-navy-bg text-accent-cyan shadow-glass' : 'text-gray-400 hover:text-white'}"
         >
-          Unirme
+          <LogIn size={15} /> Iniciar Sesión
         </button>
         <button 
-          onclick={() => mode = 'create'} 
-          class="flex-1 py-2 rounded-xl transition-all {mode === 'create' ? 'bg-navy-bg text-accent-orange shadow-glass' : 'text-gray-500'}"
+          onclick={() => mode = 'register'} 
+          class="flex-1 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 {mode === 'register' ? 'bg-navy-bg text-accent-orange shadow-glass' : 'text-gray-400 hover:text-white'}"
         >
-          Crear Casa
-        </button>
-        <button 
-          onclick={() => mode = 'search'} 
-          class="flex-1 py-2 rounded-xl transition-all {mode === 'search' ? 'bg-navy-bg text-gray-200 shadow-glass' : 'text-gray-500'}"
-        >
-          Buscar
+          <UserPlus size={15} /> Crear Cuenta
         </button>
       </div>
 
-      {#if mode === 'join'}
-        <form method="POST" action="?/join" class="space-y-4">
+      {#if mode === 'login'}
+        <!-- Formulario Iniciar Sesión -->
+        <form method="POST" action="?/login" class="space-y-4 bg-navy-surface/60 p-5 rounded-2xl border border-white/5 shadow-glass">
           <div class="space-y-1.5">
-            <label for="code" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Código de Casa</label>
+            <label for="login_user" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
+              <User size={12} /> Usuario o Nombre
+            </label>
             <input 
               type="text" 
-              id="code" 
-              name="code" 
-              placeholder="CASA-XXXXX" 
-              value={form?.code || ''}
-              class="w-full bg-navy-surface px-5 py-4 rounded-2xl border border-white/5 focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan text-white placeholder-gray-600 outline-none transition-all font-mono uppercase font-bold"
+              id="login_user" 
+              name="username" 
+              placeholder="Ej: Manu, Papá..." 
+              value={form?.username || ''}
+              class="w-full bg-navy-bg px-4 py-3.5 rounded-xl border border-white/10 focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan text-white placeholder-gray-600 outline-none transition-all font-medium"
               required
+              autocomplete="username"
             />
           </div>
           
-          <div class="grid grid-cols-[1fr_4rem] gap-3">
-            <div class="space-y-1.5">
-              <label for="name" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Tu Nombre</label>
-              <input 
-                type="text" 
-                id="name" 
-                name="name" 
-                placeholder="Ej: Mamá, Leo..." 
-                value={form?.name || ''}
-                class="w-full bg-navy-surface px-5 py-4 rounded-2xl border border-white/5 focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan text-white placeholder-gray-600 outline-none transition-all font-medium"
-                required
-              />
-            </div>
-            <div class="space-y-1.5">
-              <label for="emoji" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center block">Icono</label>
-              <input 
-                type="text" 
-                id="emoji" 
-                name="emoji" 
-                placeholder="👤"
-                class="w-full bg-navy-surface px-0 py-4 rounded-2xl border border-white/5 focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan text-white placeholder-gray-600 outline-none transition-all text-center text-xl"
-              />
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            class="w-full bg-accent-cyan hover:bg-cyan-400 text-navy-bg font-bold py-4 rounded-2xl transition-all shadow-glow flex items-center justify-center gap-2 mt-2"
-          >
-            Entrar a la Casa <ArrowRight size={20} strokeWidth={3} />
-          </button>
-        </form>
-      {:else if mode === 'create'}
-        <form method="POST" action="?/create" class="space-y-4">
           <div class="space-y-1.5">
-            <label for="c_house" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nombre del Hogar</label>
+            <label for="login_pass" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
+              <Lock size={12} /> Contraseña
+            </label>
             <input 
-              type="text" 
-              id="c_house" 
-              name="houseName" 
-              placeholder="Ej: Piso Centro, La Cabaña, Casa Familiar..." 
-              class="w-full bg-navy-surface px-5 py-4 rounded-2xl border border-white/5 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all font-medium"
-            />
-          </div>
-
-          <div class="grid grid-cols-[1fr_4rem] gap-3">
-            <div class="space-y-1.5">
-              <label for="c_name" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Tu Nombre</label>
-              <input 
-                type="text" 
-                id="c_name" 
-                name="name" 
-                placeholder="Ej: Papá, Laura..." 
-                class="w-full bg-navy-surface px-5 py-4 rounded-2xl border border-white/5 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all font-medium"
-                required
-              />
-            </div>
-            <div class="space-y-1.5">
-              <label for="c_emoji" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center block">Icono</label>
-              <input 
-                type="text" 
-                id="c_emoji" 
-                name="emoji" 
-                placeholder="👑"
-                class="w-full bg-navy-surface px-0 py-4 rounded-2xl border border-white/5 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all text-center text-xl"
-              />
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            class="w-full bg-accent-orange hover:bg-orange-400 text-navy-bg font-bold py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center gap-2 mt-2"
-          >
-            Crear Nueva Casa <Plus size={20} strokeWidth={3} />
-          </button>
-        </form>
-      {:else}
-        <!-- Pestaña Buscar / Recuperar Casa -->
-        <form method="POST" action="?/searchHouses" class="space-y-4">
-          <div class="space-y-1.5">
-            <label for="s_query" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Buscar por tu nombre o casa</label>
-            <input 
-              type="text" 
-              id="s_query" 
-              name="query" 
-              placeholder="Ej: Manu, Piso Centro..." 
-              class="w-full bg-navy-surface px-5 py-4 rounded-2xl border border-white/5 focus:border-gray-400 focus:ring-1 focus:ring-gray-400 text-white placeholder-gray-600 outline-none transition-all font-medium"
+              type="password" 
+              id="login_pass" 
+              name="password" 
+              placeholder="••••••••" 
+              class="w-full bg-navy-bg px-4 py-3.5 rounded-xl border border-white/10 focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan text-white placeholder-gray-600 outline-none transition-all font-medium"
               required
+              autocomplete="current-password"
             />
           </div>
 
           <button 
             type="submit" 
-            class="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-4 rounded-2xl transition-all border border-white/10 flex items-center justify-center gap-2 mt-2"
+            class="w-full bg-accent-cyan hover:bg-cyan-400 text-navy-bg font-bold py-3.5 rounded-xl transition-all shadow-glow flex items-center justify-center gap-2 mt-2"
           >
-            <Search size={18} /> Buscar y Entrar
+            Entrar a mi Cuenta <ArrowRight size={18} strokeWidth={2.5} />
+          </button>
+        </form>
+
+      {:else}
+        <!-- Formulario Crear Cuenta -->
+        <form method="POST" action="?/register" class="space-y-4 bg-navy-surface/60 p-5 rounded-2xl border border-white/5 shadow-glass">
+          <div class="grid grid-cols-[1fr_4.5rem] gap-3">
+            <div class="space-y-1.5">
+              <label for="reg_user" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
+                <User size={12} /> Tu Nombre
+              </label>
+              <input 
+                type="text" 
+                id="reg_user" 
+                name="username" 
+                placeholder="Ej: Manu, Laura..." 
+                value={form?.username || ''}
+                class="w-full bg-navy-bg px-4 py-3.5 rounded-xl border border-white/10 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all font-medium"
+                required
+                autocomplete="username"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <label for="reg_emoji" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 text-center block">Icono</label>
+              <input 
+                type="text" 
+                id="reg_emoji" 
+                name="emoji" 
+                value={form?.emoji || '👤'}
+                class="w-full bg-navy-bg px-0 py-3.5 rounded-xl border border-white/10 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white outline-none transition-all text-center text-xl"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label for="reg_pass" class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 flex items-center gap-1">
+              <Lock size={12} /> Elige tu Contraseña
+            </label>
+            <input 
+              type="password" 
+              id="reg_pass" 
+              name="password" 
+              placeholder="Mínimo 4 caracteres" 
+              minlength="4"
+              class="w-full bg-navy-bg px-4 py-3.5 rounded-xl border border-white/10 focus:border-accent-orange focus:ring-1 focus:ring-accent-orange text-white placeholder-gray-600 outline-none transition-all font-medium"
+              required
+              autocomplete="new-password"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            class="w-full bg-accent-orange hover:bg-orange-400 text-navy-bg font-bold py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center gap-2 mt-2"
+          >
+            Crear mi Cuenta <UserPlus size={18} strokeWidth={2.5} />
           </button>
         </form>
       {/if}
@@ -291,13 +153,13 @@
 
 <style>
   .animate-fade-in-up {
-    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(16px);
     }
     to {
       opacity: 1;

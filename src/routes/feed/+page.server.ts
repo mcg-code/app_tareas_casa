@@ -8,6 +8,9 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user) {
     redirect(303, '/');
   }
+  if (!locals.user.houseId) {
+    redirect(303, '/houses');
+  }
 
   const houseId = locals.user.houseId;
 

@@ -7,6 +7,7 @@ import { generateId } from '$lib/server/utils';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
   if (!locals.user) redirect(303, '/');
+  if (!locals.user.houseId) redirect(303, '/houses');
   
   const houseId = locals.user.houseId;
   const templates = await db.select().from(taskTemplates)
@@ -18,7 +19,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions = {
   createTemplate: async ({ request, locals }) => {
-    if (!locals.user) return fail(401);
+    if (!locals.user || !locals.user.houseId || !locals.user.memberId) return fail(401);
+    const houseId = locals.user.houseId;
+    const memberId = locals.user.memberId;
+
     const data = await request.formData();
     const title = data.get('title')?.toString().trim();
     const pointsStr = data.get('points')?.toString();
@@ -30,12 +34,12 @@ export const actions = {
     const templateId = generateId();
     await db.insert(taskTemplates).values({
       id: templateId,
-      houseId: locals.user.houseId,
+      houseId,
       title,
       basePoints: parseInt(pointsStr),
       frequency: frequency as 'none' | 'daily' | 'weekly' | 'monthly',
       frequencyValue: frequencyValueStr ? parseInt(frequencyValueStr) : null,
-      creatorId: locals.user.memberId,
+      creatorId: memberId,
       createdAt: new Date()
     });
 
@@ -43,7 +47,9 @@ export const actions = {
   },
 
   planTask: async ({ request, locals }) => {
-    if (!locals.user) return fail(401);
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    const houseId = locals.user.houseId;
+
     const data = await request.formData();
     const templateId = data.get('templateId')?.toString();
 
@@ -55,7 +61,7 @@ export const actions = {
     // Planificamos para hoy
     await db.insert(tasks).values({
       id: generateId(),
-      houseId: locals.user.houseId,
+      houseId,
       templateId: template.id,
       title: template.title,
       basePoints: template.basePoints,

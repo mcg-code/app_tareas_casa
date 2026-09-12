@@ -2,7 +2,9 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
-  name: text('name').notNull(),
+  name: text('name').notNull().unique(),
+  passwordHash: text('password_hash'),
+  emoji: text('emoji').default('👤'),
   avatarUrl: text('avatar_url')
 });
 
@@ -64,6 +66,13 @@ export const tasks = sqliteTable('tasks', {
   completedAt: integer('completed_at', { mode: 'timestamp' }),
   dueDate: integer('due_date', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(new Date())
+});
+
+export const taskAssignees = sqliteTable('task_assignees', {
+  id: text('id').primaryKey(),
+  taskId: text('task_id').notNull().references(() => tasks.id),
+  memberId: text('member_id').notNull().references(() => houseMembers.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull()
 });
 
 export const rewards = sqliteTable('rewards', {
