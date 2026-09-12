@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Search, Plus, CalendarPlus, AlertTriangle, Edit2, Trash2 } from '@lucide/svelte';
+  import { Search, Plus, CalendarPlus, AlertTriangle, Edit2, Trash2, Clock } from '@lucide/svelte';
   
   let { data } = $props();
 
@@ -9,6 +9,24 @@
   let editingFrequencyValue = $state<number | null>(null);
   let showInfo = $state(false);
   let selectedFrequency = $state('none');
+
+  let showDueDates = $derived(data.user?.settings?.enableDueDates === true);
+  let newDueDate = $state('');
+
+  function setPresetToday(hours: number) {
+    const d = new Date();
+    d.setHours(hours, 0, 0, 0);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    newDueDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function setPresetTomorrow(hours: number) {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(hours, 0, 0, 0);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    newDueDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 
   function openEdit(template: any) {
     editingTemplate = template.id;
@@ -176,6 +194,28 @@
                 <option value={day}>Día {day}</option>
               {/each}
             </select>
+          </div>
+        {/if}
+
+        {#if showDueDates}
+          <div class="space-y-2 animate-in fade-in slide-in-from-top-2">
+            <label class="text-xs font-medium text-gray-400 ml-1 flex items-center gap-1.5">
+              <Clock size={14} class="text-accent-cyan" /> Fecha y hora límite (opcional)
+            </label>
+            <input 
+              type="datetime-local" 
+              name="dueDate" 
+              bind:value={newDueDate}
+              class="bg-navy-surface w-full px-4 py-3 rounded-xl border border-white/5 text-white outline-none text-sm focus:border-accent-cyan"
+            />
+            <div class="flex flex-wrap gap-2 text-xs">
+              <button type="button" onclick={() => setPresetToday(14)} class="px-2.5 py-1 rounded-lg bg-navy-surface hover:bg-white/10 text-gray-300 border border-white/5 transition-colors">Hoy 14:00</button>
+              <button type="button" onclick={() => setPresetToday(20)} class="px-2.5 py-1 rounded-lg bg-navy-surface hover:bg-white/10 text-gray-300 border border-white/5 transition-colors">Hoy 20:00</button>
+              <button type="button" onclick={() => setPresetTomorrow(12)} class="px-2.5 py-1 rounded-lg bg-navy-surface hover:bg-white/10 text-gray-300 border border-white/5 transition-colors">Mañana 12:00</button>
+              {#if newDueDate}
+                <button type="button" onclick={() => newDueDate = ''} class="px-2 py-1 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors">Quitar</button>
+              {/if}
+            </div>
           </div>
         {/if}
 

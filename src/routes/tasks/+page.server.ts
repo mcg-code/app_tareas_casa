@@ -120,6 +120,7 @@ export const load: PageServerLoad = async ({ locals }) => {
     basePoints: tasks.currentPoints,
     assignedToId: tasks.assignedToId,
     status: tasks.status,
+    dueDate: tasks.dueDate,
     templateId: tasks.templateId,
     templateCreatedAt: taskTemplates.createdAt
   }).from(tasks)
@@ -147,10 +148,24 @@ export const load: PageServerLoad = async ({ locals }) => {
       assignedToId: t.assignedToId || (assigneesForTask[0]?.id ?? null),
       assignees: assigneesForTask,
       status: (t.status || 'pending') as 'pending' | 'up_for_grabs' | 'completed',
+      dueDate: t.dueDate,
       templateId: t.templateId,
       templateCreatedAt: t.templateCreatedAt
     };
   });
+
+  // Si está activada la opción de fechas límite, ordenar cronológicamente
+  // (las que antes acaban primero, las que más tarde acaban van al final)
+  if (locals.user.settings?.enableDueDates) {
+    todayTasks.sort((a, b) => {
+      if (a.dueDate && b.dueDate) {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+      return 0;
+    });
+  }
 
   const quarantineTemplates = await db.select().from(taskTemplates)
     .where(eq(taskTemplates.houseId, houseId));
@@ -511,6 +526,20 @@ export const actions = {
     await db.delete(taskTemplates).where(eq(taskTemplates.id, templateId));
     await db.delete(frozenPoints).where(eq(frozenPoints.templateId, templateId));
     await db.delete(tasks).where(and(eq(tasks.templateId, templateId), eq(tasks.status, 'pending')));
+
+    return { success: true };
+  },
+
+  updateDueDate: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+    const data = await request.formData();
+    const taskId = data.get('taskId')?.toString();
+    const dueDateStr = data.get('dueDate')?.toString();
+
+    if (!taskId) return fail(400);
+
+    const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+    await db.update(tasks).set({ dueDate }).where(eq(tasks.id, taskId));
 
     return { success: true };
   }

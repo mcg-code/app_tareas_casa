@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
     .where(eq(taskTemplates.houseId, houseId))
     .orderBy(taskTemplates.createdAt);
 
-  return { templates };
+  return { templates, user: locals.user };
 };
 
 export const actions = {
@@ -28,6 +28,7 @@ export const actions = {
     const pointsStr = data.get('points')?.toString();
     const frequency = data.get('frequency')?.toString() || 'none';
     const frequencyValueStr = data.get('frequencyValue')?.toString();
+    const dueDateStr = data.get('dueDate')?.toString();
 
     if (!title || !pointsStr) return fail(400);
 
@@ -43,7 +44,19 @@ export const actions = {
       createdAt: new Date()
     });
 
-    redirect(303, '/tasks/new?q=' + encodeURIComponent(title));
+    // Crear la instancia de hoy directamente
+    const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+    await db.insert(tasks).values({
+      id: generateId(),
+      houseId,
+      templateId,
+      title,
+      basePoints: parseInt(pointsStr),
+      currentPoints: parseInt(pointsStr),
+      dueDate
+    });
+
+    redirect(303, '/tasks');
   },
 
   planTask: async ({ request, locals }) => {
@@ -52,11 +65,14 @@ export const actions = {
 
     const data = await request.formData();
     const templateId = data.get('templateId')?.toString();
+    const dueDateStr = data.get('dueDate')?.toString();
 
     if (!templateId) return fail(400);
 
     const template = await db.select().from(taskTemplates).where(eq(taskTemplates.id, templateId)).get();
     if (!template) return fail(404);
+
+    const dueDate = dueDateStr ? new Date(dueDateStr) : null;
 
     // Planificamos para hoy
     await db.insert(tasks).values({
@@ -65,7 +81,8 @@ export const actions = {
       templateId: template.id,
       title: template.title,
       basePoints: template.basePoints,
-      currentPoints: template.basePoints
+      currentPoints: template.basePoints,
+      dueDate
     });
 
     redirect(303, '/tasks');

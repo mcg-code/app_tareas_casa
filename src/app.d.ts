@@ -23,6 +23,7 @@ declare global {
 					enableFeed: boolean;
 					enablePoints: boolean;
 					enableQuarantine: boolean;
+					enableDueDates: boolean;
 				};
 			} | null;
 		}

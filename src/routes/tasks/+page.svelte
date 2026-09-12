@@ -9,6 +9,7 @@
   let activeTab = $state<'today' | 'quarantine'>('today');
   let showQuarantine = $derived(data.settings?.enableQuarantine !== false);
   let showPoints = $derived(data.settings?.enablePoints !== false);
+  let showDueDates = $derived(data.settings?.enableDueDates === true);
 
   let myTasks = $derived(
     data.tasks.filter(t => t.assignees?.some(a => a.id === data.userId) || t.assignedToId === data.userId)
@@ -98,6 +99,14 @@
     await fetch('?/deleteTask', { method: 'POST', body: formData });
     await invalidateAll();
   }
+
+  async function handleUpdateDueDate(taskId: string, dueDate: string | null) {
+    const formData = new FormData();
+    formData.append('taskId', taskId);
+    if (dueDate) formData.append('dueDate', dueDate);
+    await fetch('?/updateDueDate', { method: 'POST', body: formData });
+    await invalidateAll();
+  }
 </script>
 
 <div class="h-full w-full flex flex-col relative z-10 pt-4 pb-28">
@@ -176,6 +185,8 @@
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
                   {showPoints}
+                  {showDueDates}
+                  onUpdateDueDate={handleUpdateDueDate}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 
@@ -201,6 +212,8 @@
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
                   {showPoints}
+                  {showDueDates}
+                  onUpdateDueDate={handleUpdateDueDate}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 
@@ -226,6 +239,8 @@
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
                   {showPoints}
+                  {showDueDates}
+                  onUpdateDueDate={handleUpdateDueDate}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 

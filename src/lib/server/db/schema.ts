@@ -15,7 +15,8 @@ export const houses = sqliteTable('houses', {
   enableStore: integer('enable_store', { mode: 'boolean' }).default(true),
   enableFeed: integer('enable_feed', { mode: 'boolean' }).default(true),
   enablePoints: integer('enable_points', { mode: 'boolean' }).default(true),
-  enableQuarantine: integer('enable_quarantine', { mode: 'boolean' }).default(true)
+  enableQuarantine: integer('enable_quarantine', { mode: 'boolean' }).default(true),
+  enableDueDates: integer('enable_due_dates', { mode: 'boolean' }).default(false)
 });
 
 export const houseMembers = sqliteTable('house_members', {

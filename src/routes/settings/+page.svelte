@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
-  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2 } from '@lucide/svelte';
+  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock } from '@lucide/svelte';
   
   let { data, form } = $props();
 
@@ -9,6 +9,7 @@
   let feedActive = $state(data.settings?.enableFeed ?? true);
   let pointsActive = $state(data.settings?.enablePoints ?? true);
   let quarantineActive = $state(data.settings?.enableQuarantine ?? true);
+  let dueDatesActive = $state(data.settings?.enableDueDates ?? false);
   let showSavedNotification = $state(false);
   let isSaving = $state(false);
 
@@ -21,6 +22,7 @@
       feedActive = data.settings.enableFeed ?? true;
       pointsActive = data.settings.enablePoints ?? true;
       quarantineActive = data.settings.enableQuarantine ?? true;
+      dueDatesActive = data.settings.enableDueDates ?? false;
     }
   });
 
@@ -187,6 +189,32 @@
           bind:checked={quarantineActive} 
           onchange={triggerAutoSave}
           class="w-5 h-5 accent-emerald-400 rounded-md cursor-pointer mt-1" 
+        />
+      </div>
+    </label>
+
+    <!-- Fechas y Horas Límite -->
+    <label class="block cursor-pointer bg-navy-surface p-4 rounded-2xl border transition-all {dueDatesActive ? 'border-indigo-400/40 bg-navy-surface/90' : 'border-white/5 opacity-70'} hover:border-white/20">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="p-2.5 rounded-xl {dueDatesActive ? 'bg-indigo-400/20 text-indigo-400' : 'bg-white/5 text-gray-500'} transition-colors">
+            <Clock size={22} />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-white">Fechas y Horas Límite</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+              Fija horas o fechas de finalización a las tareas y ordénalas cronológicamente: las más urgentes arriba y las que más tarde acaban abajo.
+            </p>
+          </div>
+        </div>
+        <input 
+          type="checkbox" 
+          name="enableDueDates" 
+          bind:checked={dueDatesActive} 
+          onchange={triggerAutoSave}
+          class="w-5 h-5 accent-indigo-400 rounded-md cursor-pointer mt-1" 
         />
       </div>
     </label>

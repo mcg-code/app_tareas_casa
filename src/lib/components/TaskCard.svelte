@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Trophy, CheckCircle, ArrowRight, Trash2, Users, UserPlus, Check, X, LogOut } from '@lucide/svelte';
+  import { Trophy, CheckCircle, ArrowRight, Trash2, Users, UserPlus, Check, X, LogOut, Clock } from '@lucide/svelte';
   import Avatar from '$lib/components/Avatar.svelte';
   
   type Member = { id: string, name: string, emoji: string, avatarUrl?: string | null };
@@ -9,12 +9,14 @@
     currentUserId,
     houseMembers = [],
     showPoints = true,
+    showDueDates = false,
     onComplete, 
     onPass, 
     onClaim, 
     onJoin,
     onUnclaim, 
     onToggleAssignee,
+    onUpdateDueDate,
     onRemove 
   } = $props<{
     task: { 
@@ -24,17 +26,20 @@
       status: string, 
       assignedToId?: string | null, 
       assignees?: Member[],
+      dueDate?: Date | string | null,
       templateCreatedAt?: Date | null 
     },
     currentUserId?: string,
     houseMembers?: Member[],
     showPoints?: boolean,
+    showDueDates?: boolean,
     onComplete: (id: string) => void,
     onPass?: (id: string) => void,
     onClaim: (id: string) => void,
     onJoin?: (id: string) => void,
     onUnclaim?: (id: string, memberId?: string) => void,
     onToggleAssignee?: (taskId: string, memberId: string) => void,
+    onUpdateDueDate?: (taskId: string, dueDate: string | null) => void,
     onRemove?: (id: string) => void
   }>();
 
@@ -42,6 +47,53 @@
   let startX = 0;
   let isDragging = $state(false);
   let showTeamModal = $state(false);
+  let showDueDateModal = $state(false);
+  let editDueDateValue = $state('');
+
+  function formatDueDate(dInput?: Date | string | null) {
+    if (!dInput) return null;
+    const d = new Date(dInput);
+    if (isNaN(d.getTime())) return null;
+
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = d.toDateString() === tomorrow.toDateString();
+
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const timeStr = `${hours}:${minutes}`;
+
+    const diffMs = d.getTime() - now.getTime();
+    const isOverdue = diffMs < 0;
+    const isSoon = diffMs > 0 && diffMs < 60 * 60 * 1000;
+
+    let text = '';
+    if (isToday) {
+      text = `Hoy ${timeStr}`;
+    } else if (isTomorrow) {
+      text = `Mañana ${timeStr}`;
+    } else {
+      text = `${d.getDate()}/${d.getMonth() + 1} ${timeStr}`;
+    }
+
+    return { text, isOverdue, isSoon };
+  }
+
+  function openDueDateModal() {
+    if (task.dueDate) {
+      const d = new Date(task.dueDate);
+      if (!isNaN(d.getTime())) {
+        editDueDateValue = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      }
+    } else {
+      const d = new Date();
+      d.setHours(20, 0, 0, 0);
+      editDueDateValue = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    }
+    showDueDateModal = true;
+  }
   
   const THRESHOLD = 100;
 
@@ -156,10 +208,34 @@
             {/each}
           </div>
         {/if}
+
+        <!-- Fecha y hora límite -->
+        {#if showDueDates && task.dueDate}
+          {@const dueInfo = formatDueDate(task.dueDate)}
+          {#if dueInfo}
+            <div 
+              class="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full {dueInfo.isOverdue ? 'bg-red-500/20 text-red-300 border border-red-500/30' : dueInfo.isSoon ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'}"
+              title={dueInfo.isOverdue ? "¡Tarea vencida!" : "Fecha y hora límite"}
+            >
+              <Clock size={11} />
+              <span>{dueInfo.text}</span>
+            </div>
+          {/if}
+        {/if}
       </div>
     </div>
     
     <div class="flex items-center gap-1.5 shrink-0">
+      {#if showDueDates && onUpdateDueDate}
+        <button 
+          type="button" 
+          onclick={(e) => { e.stopPropagation(); openDueDateModal(); }}
+          class="p-2 text-gray-400 hover:text-indigo-300 hover:bg-indigo-400/10 rounded-xl transition-colors shrink-0"
+          title={task.dueDate ? "Cambiar fecha y hora límite" : "Asignar hora límite"}
+        >
+          <Clock size={16} class={task.dueDate ? "text-indigo-400" : ""} />
+        </button>
+      {/if}
       {#if !isAssignedToMe && assigneeCount === 0}
         <!-- Tarea sin dueño -->
         <button 
@@ -303,6 +379,115 @@
         >
           Guardar
         </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal fijar fecha/hora límite -->
+{#if showDueDateModal}
+  <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-navy-surface border border-white/10 rounded-2xl w-full max-w-sm p-5 space-y-4 shadow-2xl animate-fade-in-up">
+      <div class="flex justify-between items-center">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <Clock size={18} class="text-indigo-400" /> Fecha y Hora Límite
+        </h3>
+        <button 
+          type="button"
+          onclick={() => showDueDateModal = false}
+          class="text-gray-400 hover:text-white p-1 rounded-lg transition-colors"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-gray-200">{task.title}</p>
+        <p class="text-xs text-gray-400 mt-1">
+          Fija cuándo debe completarse. Las tareas se ordenarán automáticamente por hora límite.
+        </p>
+      </div>
+
+      <div class="space-y-2">
+        <input 
+          type="datetime-local" 
+          bind:value={editDueDateValue}
+          class="w-full bg-navy-bg px-4 py-3 rounded-xl border border-white/10 text-white font-medium focus:border-indigo-400 outline-none text-sm"
+        />
+
+        <div class="flex items-center gap-1.5 pt-1 overflow-x-auto">
+          <button 
+            type="button" 
+            onclick={() => {
+              const d = new Date();
+              d.setHours(14, 0, 0, 0);
+              editDueDateValue = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            }}
+            class="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-[10px] font-medium text-gray-300 rounded-lg shrink-0"
+          >
+            Hoy 14:00
+          </button>
+          <button 
+            type="button" 
+            onclick={() => {
+              const d = new Date();
+              d.setHours(20, 0, 0, 0);
+              editDueDateValue = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            }}
+            class="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-[10px] font-medium text-gray-300 rounded-lg shrink-0"
+          >
+            Hoy 20:00
+          </button>
+          <button 
+            type="button" 
+            onclick={() => {
+              const d = new Date();
+              d.setDate(d.getDate() + 1);
+              d.setHours(12, 0, 0, 0);
+              editDueDateValue = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            }}
+            class="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-[10px] font-medium text-gray-300 rounded-lg shrink-0"
+          >
+            Mañana 12:00
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+        {#if task.dueDate}
+          <button
+            type="button"
+            onclick={() => {
+              if (onUpdateDueDate) onUpdateDueDate(task.id, null);
+              showDueDateModal = false;
+            }}
+            class="py-2.5 px-3 text-red-400 hover:text-red-300 text-xs font-bold transition-colors"
+          >
+            Quitar hora
+          </button>
+        {:else}
+          <div></div>
+        {/if}
+        
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onclick={() => showDueDateModal = false}
+            class="px-4 py-2.5 bg-white/5 text-gray-400 hover:text-white rounded-xl text-xs font-bold transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onclick={() => {
+              if (onUpdateDueDate) onUpdateDueDate(task.id, editDueDateValue || null);
+              showDueDateModal = false;
+            }}
+            class="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs rounded-xl transition-all shadow-glow"
+          >
+            Guardar
+          </button>
+        </div>
       </div>
     </div>
   </div>
