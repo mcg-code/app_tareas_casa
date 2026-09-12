@@ -176,7 +176,8 @@ export const load: PageServerLoad = async ({ locals }) => {
     houseMembers: currentHouseMembers.map(m => ({ id: m.id, name: m.displayName || m.name, emoji: m.emoji || '👤', avatarUrl: m.avatarUrl })),
     quarantine: quarantineWithVotes,
     userId: currentMemberId,
-    houseName: locals.user.houseName
+    houseName: locals.user.houseName,
+    settings: locals.user.settings
   };
 };
 

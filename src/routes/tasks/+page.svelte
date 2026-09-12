@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ListTodo, CheckCircle2, Plus, AlertTriangle, ThumbsUp, ThumbsDown, Users } from '@lucide/svelte';
+  import { ListTodo, CheckCircle2, Plus, AlertTriangle, ThumbsUp, ThumbsDown, Users, Settings } from '@lucide/svelte';
   import TaskCard from '$lib/components/TaskCard.svelte';
   import { invalidateAll } from '$app/navigation';
   import confetti from 'canvas-confetti';
@@ -7,6 +7,8 @@
   let { data } = $props();
 
   let activeTab = $state<'today' | 'quarantine'>('today');
+  let showQuarantine = $derived(data.settings?.enableQuarantine !== false);
+  let showPoints = $derived(data.settings?.enablePoints !== false);
 
   let myTasks = $derived(
     data.tasks.filter(t => t.assignees?.some(a => a.id === data.userId) || t.assignedToId === data.userId)
@@ -106,34 +108,46 @@
       </h2>
     </div>
 
-    <a 
-      href="/houses" 
-      class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
-      title="Cambiar de casa"
-    >
-      <span>🏡</span>
-      <span class="max-w-[120px] truncate">{data.houseName || 'Mis Casas'}</span>
-    </a>
+    <div class="flex items-center gap-2">
+      <a 
+        href="/settings" 
+        class="p-2 bg-navy-surface hover:bg-white/10 text-gray-400 hover:text-accent-cyan rounded-xl transition-all border border-white/5 shadow-glass"
+        title="Ajustes de este espacio"
+      >
+        <Settings size={16} />
+      </a>
+
+      <a 
+        href="/houses" 
+        class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
+        title="Cambiar de casa"
+      >
+        <span>🏡</span>
+        <span class="max-w-[120px] truncate">{data.houseName || 'Mis Casas'}</span>
+      </a>
+    </div>
   </header>
 
-  <!-- Pestañas -->
-  <div class="flex gap-2 p-1 bg-navy-surface rounded-xl border border-white/5 mb-6">
-    <button 
-      onclick={() => activeTab = 'today'}
-      class="flex-1 py-2 text-sm font-bold rounded-lg transition-all {activeTab === 'today' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}"
-    >
-      Para Hoy
-    </button>
-    <button 
-      onclick={() => activeTab = 'quarantine'}
-      class="flex-1 py-2 text-sm font-bold rounded-lg transition-all relative {activeTab === 'quarantine' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}"
-    >
-      En Cuarentena
-      {#if data.quarantine.length > 0}
-        <span class="absolute top-1 right-2 w-2 h-2 bg-accent-orange rounded-full animate-pulse"></span>
-      {/if}
-    </button>
-  </div>
+  <!-- Pestañas (solo si la cuarentena está activa) -->
+  {#if showQuarantine}
+    <div class="flex gap-2 p-1 bg-navy-surface rounded-xl border border-white/5 mb-6">
+      <button 
+        onclick={() => activeTab = 'today'}
+        class="flex-1 py-2 text-sm font-bold rounded-lg transition-all {activeTab === 'today' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}"
+      >
+        Para Hoy
+      </button>
+      <button 
+        onclick={() => activeTab = 'quarantine'}
+        class="flex-1 py-2 text-sm font-bold rounded-lg transition-all relative {activeTab === 'quarantine' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}"
+      >
+        En Cuarentena
+        {#if data.quarantine.length > 0}
+          <span class="absolute top-1 right-2 w-2 h-2 bg-accent-orange rounded-full animate-pulse"></span>
+        {/if}
+      </button>
+    </div>
+  {/if}
 
   <div class="flex-1 overflow-y-auto pr-1">
     {#if activeTab === 'today'}
@@ -159,6 +173,7 @@
                   {task} 
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
+                  {showPoints}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 
@@ -183,6 +198,7 @@
                   {task} 
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
+                  {showPoints}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 
@@ -207,6 +223,7 @@
                   {task} 
                   currentUserId={data.userId}
                   houseMembers={data.houseMembers}
+                  {showPoints}
                   onClaim={() => handleClaim(task.id)} 
                   onJoin={() => handleJoin(task.id)}
                   onUnclaim={() => handleUnclaim(task.id, data.userId)} 

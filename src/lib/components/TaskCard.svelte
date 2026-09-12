@@ -8,6 +8,7 @@
     task, 
     currentUserId,
     houseMembers = [],
+    showPoints = true,
     onComplete, 
     onPass, 
     onClaim, 
@@ -27,6 +28,7 @@
     },
     currentUserId?: string,
     houseMembers?: Member[],
+    showPoints?: boolean,
     onComplete: (id: string) => void,
     onPass?: (id: string) => void,
     onClaim: (id: string) => void,
@@ -133,15 +135,17 @@
 
       <!-- Puntos y desglose por persona -->
       <div class="flex items-center flex-wrap gap-2 text-sm">
-        <div class="flex items-center gap-1.5 text-accent-cyan font-bold whitespace-nowrap">
-          <Trophy size={14} />
-          <span>{task.basePoints} pts</span>
-        </div>
+        {#if showPoints}
+          <div class="flex items-center gap-1.5 text-accent-cyan font-bold whitespace-nowrap">
+            <Trophy size={14} />
+            <span>{task.basePoints} pts</span>
+          </div>
 
-        {#if assigneeCount > 1}
-          <span class="text-xs text-cyan-300 font-semibold bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
-            <Users size={11} /> {pointsPerPerson} pts c/u
-          </span>
+          {#if assigneeCount > 1}
+            <span class="text-xs text-cyan-300 font-semibold bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
+              <Users size={11} /> {pointsPerPerson} pts c/u
+            </span>
+          {/if}
         {/if}
 
         <!-- Emojis y fotos de participantes -->

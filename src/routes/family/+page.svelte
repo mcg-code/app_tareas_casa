@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { Trophy, Flame, ChevronDown, ListTodo, Gift, Home, Pencil, Check, Camera } from '@lucide/svelte';
+  import { Trophy, Flame, ChevronDown, ListTodo, Gift, Home, Pencil, Check, Camera, Settings } from '@lucide/svelte';
   import { slide } from 'svelte/transition';
   import Avatar from '$lib/components/Avatar.svelte';
   import AvatarPicker from '$lib/components/AvatarPicker.svelte';
   
   let { data } = $props();
+
+  let showPoints = $derived(data.user?.settings?.enablePoints !== false);
   
   let expandedMember = $state<string | null>(null);
   let isEditingHouseName = $state(false);
@@ -51,6 +53,14 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <a 
+          href="/settings" 
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-accent-cyan rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
+          title="Ajustes de esta casa"
+        >
+          <Settings size={14} /> Ajustes
+        </a>
+
         <button
           onclick={openEditMyAvatar}
           class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-accent-cyan rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
@@ -185,13 +195,17 @@
                 {#if member.isCurrent}
                   <span class="text-[9px] bg-accent-cyan/20 text-accent-cyan px-1.5 py-0.5 rounded font-bold uppercase">Tú</span>
                 {/if}
-                <span class="text-[10px] {member.currentStreak ? 'bg-accent-orange/20 text-accent-orange' : 'bg-white/5 text-gray-500'} px-1.5 py-0.5 rounded flex items-center gap-0.5" title="Días seguidos cumpliendo tareas">
-                  <Flame size={10} class={member.currentStreak ? '' : 'opacity-50'} /> {member.currentStreak || 0}
-                </span>
+                {#if showPoints}
+                  <span class="text-[10px] {member.currentStreak ? 'bg-accent-orange/20 text-accent-orange' : 'bg-white/5 text-gray-500'} px-1.5 py-0.5 rounded flex items-center gap-0.5" title="Días seguidos cumpliendo tareas">
+                    <Flame size={10} class={member.currentStreak ? '' : 'opacity-50'} /> {member.currentStreak || 0}
+                  </span>
+                {/if}
               </h3>
-              <p class="text-xs text-accent-cyan font-bold flex items-center gap-1 mt-0.5">
-                <Trophy size={12} /> {member.points} pts
-              </p>
+              {#if showPoints}
+                <p class="text-xs text-accent-cyan font-bold flex items-center gap-1 mt-0.5">
+                  <Trophy size={12} /> {member.points} pts
+                </p>
+              {/if}
             </div>
           </button>
           

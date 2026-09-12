@@ -11,6 +11,9 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user.houseId) {
     redirect(303, '/houses');
   }
+  if (locals.user.settings?.enableFeed === false) {
+    redirect(303, '/tasks');
+  }
 
   const houseId = locals.user.houseId;
 

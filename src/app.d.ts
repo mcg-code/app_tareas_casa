@@ -16,6 +16,12 @@ declare global {
 				houseCode?: string | null;
 				houseName?: string | null;
 				points?: number;
+				settings?: {
+					enableStore: boolean;
+					enableFeed: boolean;
+					enablePoints: boolean;
+					enableQuarantine: boolean;
+				};
 			} | null;
 		}
 		// interface PageData {}

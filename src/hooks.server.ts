@@ -41,7 +41,13 @@ export const handle: Handle = async ({ event, resolve }) => {
             houseId: houseRecord.id,
             houseCode: houseRecord.code,
             houseName: houseRecord.name,
-            points: activeMembership.points ?? 0
+            points: activeMembership.points ?? 0,
+            settings: {
+              enableStore: houseRecord.enableStore ?? true,
+              enableFeed: houseRecord.enableFeed ?? true,
+              enablePoints: houseRecord.enablePoints ?? true,
+              enableQuarantine: houseRecord.enableQuarantine ?? true
+            }
           };
         } else {
           event.locals.user = {
@@ -106,7 +112,13 @@ export const handle: Handle = async ({ event, resolve }) => {
             houseId: legacyHouse.id,
             houseCode: legacyHouse.code,
             houseName: legacyHouse.name,
-            points: legacyMember.points ?? 0
+            points: legacyMember.points ?? 0,
+            settings: {
+              enableStore: legacyHouse.enableStore ?? true,
+              enableFeed: legacyHouse.enableFeed ?? true,
+              enablePoints: legacyHouse.enablePoints ?? true,
+              enableQuarantine: legacyHouse.enableQuarantine ?? true
+            }
           };
           return resolve(event);
         }

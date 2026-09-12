@@ -12,6 +12,9 @@ export const load: PageServerLoad = async ({ locals }) => {
   if (!locals.user.houseId || !locals.user.memberId) {
     redirect(303, '/houses');
   }
+  if (locals.user.settings?.enableStore === false) {
+    redirect(303, '/tasks');
+  }
 
   const houseId = locals.user.houseId;
   let allRewards = await db.select().from(rewards).where(eq(rewards.houseId, houseId));

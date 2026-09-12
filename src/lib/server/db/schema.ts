@@ -11,7 +11,11 @@ export const users = sqliteTable('users', {
 export const houses = sqliteTable('houses', {
   id: text('id').primaryKey(),
   code: text('code').notNull().unique(),
-  name: text('name').notNull()
+  name: text('name').notNull(),
+  enableStore: integer('enable_store', { mode: 'boolean' }).default(true),
+  enableFeed: integer('enable_feed', { mode: 'boolean' }).default(true),
+  enablePoints: integer('enable_points', { mode: 'boolean' }).default(true),
+  enableQuarantine: integer('enable_quarantine', { mode: 'boolean' }).default(true)
 });
 
 export const houseMembers = sqliteTable('house_members', {
