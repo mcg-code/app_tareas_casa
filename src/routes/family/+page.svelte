@@ -61,14 +61,6 @@
           <Settings size={14} /> Ajustes
         </a>
 
-        <button
-          onclick={openEditMyAvatar}
-          class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-accent-cyan rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
-          title="Personalizar mi perfil (nombre y foto) para esta casa"
-        >
-          <Camera size={14} /> Mi Perfil
-        </button>
-
         <a 
           href="/houses" 
           class="flex items-center gap-1.5 px-3 py-1.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-xl text-xs font-bold border border-white/5 shadow-glass transition-all"
