@@ -12,6 +12,7 @@
     categories = [],
     showPoints = true,
     showDueDates = false,
+    showTaskCategories = true,
     onComplete, 
     onPass, 
     onClaim, 
@@ -38,6 +39,7 @@
     categories?: Category[],
     showPoints?: boolean,
     showDueDates?: boolean,
+    showTaskCategories?: boolean,
     onComplete: (id: string) => void,
     onPass?: (id: string) => void,
     onClaim: (id: string) => void,
@@ -233,7 +235,7 @@
         {/if}
 
         <!-- Caja / Categoría -->
-        {#if categories && categories.length > 0}
+        {#if showTaskCategories && categories && categories.length > 0}
           <button 
             type="button" 
             onclick={(e) => { e.stopPropagation(); if (onMoveCategory) showCategoryModal = true; }}
@@ -516,7 +518,7 @@
 {/if}
 
 <!-- Modal para Mover de Caja/Categoría -->
-{#if showCategoryModal && categories && categories.length > 0}
+{#if showTaskCategories && showCategoryModal && categories && categories.length > 0}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in" onclick={() => showCategoryModal = false}>
     <div class="bg-navy-bg border border-white/15 w-full max-w-md rounded-3xl shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[85vh] overflow-hidden" onclick={(e) => e.stopPropagation()}>
       

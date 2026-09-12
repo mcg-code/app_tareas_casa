@@ -22,6 +22,7 @@
   let showPoints = $derived(data.house?.enablePoints ?? (data.user?.settings?.enablePoints ?? true));
   let showDueDates = $derived(data.house?.enableDueDates ?? (data.user?.settings?.enableDueDates === true));
   let showQuarantine = $derived(data.house?.enableQuarantine ?? (data.user?.settings?.enableQuarantine ?? true));
+  let showTaskCategories = $derived(data.house?.enableTaskCategories ?? (data.user?.settings?.enableTaskCategories !== false));
 
   function setPresetToday(hours: number) {
     const d = new Date();
@@ -249,7 +250,7 @@
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2 flex-wrap">
         <h4 class="font-bold text-gray-100 text-sm truncate">{template.title}</h4>
-        {#if category}
+        {#if showTaskCategories && category}
           <span class="text-[10px] bg-white/5 text-gray-300 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-white/5">
             <span>{category.icon || '📦'}</span> {category.name}
           </span>
@@ -405,7 +406,7 @@
         {/if}
 
         <!-- Caja / Categoría -->
-        {#if data.categories && data.categories.length > 0}
+        {#if showTaskCategories && data.categories && data.categories.length > 0}
           <div class="space-y-1.5 animate-in fade-in slide-in-from-top-2">
             <label class="text-xs font-semibold text-gray-300 ml-1 flex items-center gap-1.5">
               <span>📦</span> Caja / Categoría

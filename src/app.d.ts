@@ -25,6 +25,8 @@ declare global {
 					enableQuarantine: boolean;
 					enableDueDates: boolean;
 					enableInventory: boolean;
+					enableTaskCategories?: boolean;
+					enableInventoryLocations?: boolean;
 				};
 			} | null;
 		}

@@ -8,6 +8,7 @@
 
   let { data }: { data: PageData } = $props();
 
+  let showLocations = $derived(data.settings?.enableInventoryLocations !== false);
   let activeTab = $state<'inventory' | 'shopping'>('inventory');
   let searchQuery = $state('');
   let showLocationModal = $state(false);
@@ -233,7 +234,7 @@
     </div>
 
     <div class="flex items-center gap-2">
-      {#if data.user?.isAdmin}
+      {#if showLocations && data.user?.isAdmin}
         <button 
           type="button" 
           onclick={() => showLocationModal = true}
@@ -282,9 +283,15 @@
   <!-- Contenido de la Pantalla -->
   <div class="flex-1 overflow-y-auto pr-1">
     {#if activeTab === 'inventory'}
-      <!-- VISTA INVENTARIO (ORGANIZADO POR CAJONES) -->
+      <!-- VISTA INVENTARIO -->
       <div class="flex items-center justify-between gap-2 mb-4">
-        <p class="text-xs text-gray-400">Objetos y provisiones disponibles en cada cajón:</p>
+        <p class="text-xs text-gray-400">
+          {#if showLocations && data.locations.length > 0}
+            Objetos y provisiones disponibles en cada cajón:
+          {:else}
+            Objetos y provisiones disponibles en el inventario:
+          {/if}
+        </p>
         <button 
           type="button" 
           onclick={() => openAddItemModal('inventory')}
@@ -294,17 +301,21 @@
         </button>
       </div>
 
-      {#if data.locations.length === 0 && inStockItems.length === 0}
+      {#if data.items.length === 0}
         <div class="text-center py-12 px-4 bg-navy-surface/30 border border-white/5 rounded-2xl">
           <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-400/10 flex items-center justify-center text-3xl">
             🧊
           </div>
           <h3 class="text-base font-bold text-white mb-1">Inventario vacío</h3>
           <p class="text-xs text-gray-400 max-w-xs mx-auto mb-4">
-            Crea cajones como <em>Congelador</em>, <em>Nevera</em> o <em>Despensa</em> para empezar a organizar la comida o el material.
+            {#if showLocations}
+              Crea cajones como <em>Congelador</em>, <em>Nevera</em> o <em>Despensa</em> para empezar a organizar la comida o el material.
+            {:else}
+              Añade objetos para empezar a organizar la comida o el material de la casa.
+            {/if}
           </p>
           <div class="flex justify-center gap-2">
-            {#if data.user?.isAdmin}
+            {#if showLocations && data.user?.isAdmin}
               <button 
                 type="button" 
                 onclick={() => showLocationModal = true}
@@ -322,7 +333,7 @@
             </button>
           </div>
         </div>
-      {:else}
+      {:else if showLocations && data.locations.length > 0}
         <!-- Cajones personalizados -->
         {#each data.locations as loc}
           {@const locItems = data.items.filter(i => i.locationId === loc.id)}
@@ -657,6 +668,152 @@
             {/if}
           </div>
         {/if}
+      {:else}
+        <!-- VISTA PLANA SIN CAJONES -->
+        {@const availableFlat = data.items.filter(i => (i.quantity || 0) > 0)}
+        {@const outOfStockFlat = data.items.filter(i => (i.quantity || 0) === 0)}
+
+        {#if availableFlat.length > 0}
+          <div class="space-y-2 mb-5">
+            {#each availableFlat as item}
+              <div class="flex items-center justify-between p-3.5 rounded-2xl bg-navy-surface border border-white/10 hover:border-white/20 transition-all shadow-glass">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="text-2xl shrink-0">{item.icon || '📦'}</span>
+                  <div class="min-w-0">
+                    <h4 class="font-bold text-sm text-gray-100 truncate">{item.name}</h4>
+                    <p class="text-[11px] text-gray-400 font-medium">
+                      Stock: <strong class="text-amber-400">{item.quantity}</strong> {item.unit || 'uds'}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <!-- Ajuste rápido de stock -->
+                  <div class="flex items-center bg-navy-bg/90 border border-white/10 rounded-xl overflow-hidden mr-1 shadow-inner">
+                    <button 
+                      type="button"
+                      onclick={() => handleUpdateStock(item.id, -1)}
+                      class="px-2.5 py-1 text-gray-400 hover:text-white hover:bg-white/5 text-xs font-bold transition-colors"
+                      title="Restar 1"
+                    >
+                      -
+                    </button>
+                    <span class="px-2 text-xs font-bold text-white min-w-[20px] text-center">{item.quantity}</span>
+                    <button 
+                      type="button"
+                      onclick={() => handleUpdateStock(item.id, 1)}
+                      class="px-2.5 py-1 text-gray-400 hover:text-white hover:bg-white/5 text-xs font-bold transition-colors"
+                      title="Sumar 1"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <!-- Botón directo: ¡Se acabó! (pasa a la lista de compra) -->
+                  <button 
+                    type="button" 
+                    onclick={() => handleUpdateStock(item.id, undefined, true)}
+                    class="flex items-center gap-1 px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white text-xs font-bold rounded-xl border border-red-500/20 transition-colors"
+                    title="Se acabó: enviar a la lista de la compra"
+                  >
+                    <ShoppingCart size={13} />
+                    <span class="hidden xs:inline">Se acabó</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    onclick={() => openEditItemModal(item)}
+                    class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                    title="Editar producto"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+
+                  <button 
+                    type="button" 
+                    onclick={() => handleDeleteItem(item.id)}
+                    class="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                    title="Borrar del catálogo"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+
+        {#if outOfStockFlat.length > 0}
+          <div class="bg-navy-surface/30 border border-white/5 rounded-2xl p-4 space-y-2">
+            <div class="flex items-center justify-between px-1 mb-2">
+              <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                Agotados ({outOfStockFlat.length})
+              </span>
+              <span class="text-[10px] text-gray-500">Historial y catálogo guardado</span>
+            </div>
+            {#each outOfStockFlat as item}
+              <div class="flex items-center justify-between p-3 rounded-xl bg-navy-surface/40 border border-white/5 hover:border-white/10 transition-all opacity-85 hover:opacity-100">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="text-2xl shrink-0 grayscale">{item.icon || '📦'}</span>
+                  <div class="min-w-0">
+                    <h4 class="font-bold text-sm text-gray-300 truncate">{item.name}</h4>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                      {#if item.neededInShoppingList}
+                        <span class="text-[10px] bg-amber-400/15 text-amber-300 font-semibold px-2 py-0.5 rounded-md border border-amber-400/20 flex items-center gap-1">
+                          <ShoppingCart size={10} /> En la compra ({item.shoppingQuantity || 1} {item.unit || 'uds'})
+                        </span>
+                      {:else}
+                        <span class="text-[10px] bg-rose-500/15 text-rose-300 font-semibold px-2 py-0.5 rounded-md border border-rose-500/20">
+                          🔴 Agotado (0 {item.unit || 'uds'})
+                        </span>
+                      {/if}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 shrink-0">
+                  {#if !item.neededInShoppingList}
+                    <button 
+                      type="button" 
+                      onclick={() => handleSendToShopping(item.id)}
+                      class="flex items-center gap-1 px-2.5 py-1.5 bg-accent-cyan/10 hover:bg-accent-cyan hover:text-navy-bg text-accent-cyan text-xs font-bold rounded-xl border border-accent-cyan/30 transition-colors"
+                      title="Añadir a la lista de la compra"
+                    >
+                      <ShoppingCart size={13} />
+                      <span class="hidden xs:inline">+ Compra</span>
+                    </button>
+                  {/if}
+                  <button 
+                    type="button"
+                    onclick={() => handleUpdateStock(item.id, 1)}
+                    class="px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white text-xs font-bold rounded-xl border border-emerald-500/20 transition-colors flex items-center gap-1"
+                    title="Reponer 1 unidad"
+                  >
+                    <Plus size={12} />
+                    <span class="hidden xs:inline">Reponer</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    onclick={() => openEditItemModal(item)}
+                    class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                    title="Editar producto"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button 
+                    type="button" 
+                    onclick={() => handleDeleteItem(item.id)}
+                    class="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                    title="Borrar del catálogo"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
       {/if}
 
     {:else}
@@ -776,7 +933,7 @@
                     {item.name}
                   </h4>
                   <div class="flex items-center gap-2 mt-0.5">
-                    {#if loc}
+                    {#if showLocations && loc}
                       <span class="text-[10px] bg-white/5 text-gray-400 px-2 py-0.5 rounded-md flex items-center gap-1 border border-white/5">
                         <span>{loc.icon || '🧊'}</span> {loc.name}
                       </span>
@@ -998,7 +1155,7 @@
             </div>
           </div>
 
-          {#if data.locations.length > 0}
+          {#if showLocations && data.locations.length > 0}
             <div class="space-y-1">
               <label class="text-[11px] text-gray-400">Cajón habitual</label>
               <select 
@@ -1090,7 +1247,7 @@
             </div>
           </div>
 
-          {#if data.locations.length > 0}
+          {#if showLocations && data.locations.length > 0}
             <div class="space-y-1">
               <label class="text-[11px] text-gray-400">Cajón habitual</label>
               <select 

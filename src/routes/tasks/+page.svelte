@@ -10,6 +10,7 @@
   let showQuarantine = $derived(data.settings?.enableQuarantine !== false);
   let showPoints = $derived(data.settings?.enablePoints !== false);
   let showDueDates = $derived(data.settings?.enableDueDates === true);
+  let showTaskCategories = $derived(data.settings?.enableTaskCategories !== false);
 
   let showCategoryManagerModal = $state(false);
   let newCategoryName = $state('');
@@ -171,7 +172,7 @@
     </div>
 
     <div class="flex items-center gap-2">
-      {#if data.user?.isAdmin}
+      {#if showTaskCategories && data.user?.isAdmin}
         <button 
           type="button" 
           onclick={() => showCategoryManagerModal = true}
@@ -234,7 +235,7 @@
           <h3 class="text-xl font-bold text-gray-200 mb-2">¡Todo limpio por aquí!</h3>
           <p class="text-gray-400 text-sm max-w-[250px] leading-relaxed">No hay tareas planificadas para hoy. Busca en el catálogo para añadir una.</p>
         </div>
-      {:else if data.categories && data.categories.length > 0}
+      {:else if showTaskCategories && data.categories && data.categories.length > 0}
         <!-- VISTA VERTICAL DIVIDIDA EN CAJAS -->
         {#each data.categories as cat}
           {@const catTasks = data.tasks.filter(t => t.categoryId === cat.id)}
@@ -291,6 +292,7 @@
                       categories={data.categories}
                       {showPoints}
                       {showDueDates}
+                      {showTaskCategories}
                       onUpdateDueDate={handleUpdateDueDate}
                       onMoveCategory={handleMoveTaskCategory}
                       onClaim={() => handleClaim(task.id)} 
@@ -379,8 +381,8 @@
         {/if}
 
       {:else}
-        <!-- MODO CLÁSICO (SIN CAJAS CREADAS AÚN) -->
-        {#if data.user?.isAdmin}
+        <!-- MODO CLÁSICO (SIN CAJAS CREADAS O CAJAS DESACTIVADAS) -->
+        {#if showTaskCategories && data.user?.isAdmin}
           <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-accent-cyan/10 to-indigo-500/10 border border-accent-cyan/20 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
               <span class="text-3xl">📦</span>

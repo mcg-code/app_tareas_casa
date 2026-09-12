@@ -24,7 +24,8 @@ export const load: PageServerLoad = async ({ locals }) => {
     locations,
     items,
     user: locals.user,
-    houseName: locals.user.houseName
+    houseName: locals.user.houseName,
+    settings: locals.user.settings
   };
 };
 

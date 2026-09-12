@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { invalidateAll } from '$app/navigation';
-  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock, Package, Plus, Trash2, Edit2, X, Boxes } from '@lucide/svelte';
+  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2, Clock, Package, Plus, Trash2, Edit2, X, Boxes, PackagePlus } from '@lucide/svelte';
   
   let { data, form } = $props();
 
@@ -11,6 +11,8 @@
   let quarantineActive = $state(data.settings?.enableQuarantine ?? true);
   let dueDatesActive = $state(data.settings?.enableDueDates ?? false);
   let inventoryActive = $state(data.settings?.enableInventory ?? false);
+  let taskCategoriesActive = $state(data.settings?.enableTaskCategories ?? true);
+  let inventoryLocationsActive = $state(data.settings?.enableInventoryLocations ?? true);
   let showSavedNotification = $state(false);
   let isSaving = $state(false);
 
@@ -64,6 +66,8 @@
       quarantineActive = data.settings.enableQuarantine ?? true;
       dueDatesActive = data.settings.enableDueDates ?? false;
       inventoryActive = data.settings.enableInventory ?? false;
+      taskCategoriesActive = data.settings.enableTaskCategories ?? true;
+      inventoryLocationsActive = data.settings.enableInventoryLocations ?? true;
     }
   });
 
@@ -260,19 +264,45 @@
       </div>
     </label>
 
+    <!-- Cajas de Tareas -->
+    <label class="block cursor-pointer bg-navy-surface p-4 rounded-2xl border transition-all {taskCategoriesActive ? 'border-cyan-400/40 bg-navy-surface/90' : 'border-white/5 opacity-70'} hover:border-white/20">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="p-2.5 rounded-xl {taskCategoriesActive ? 'bg-cyan-400/20 text-cyan-400' : 'bg-white/5 text-gray-500'} transition-colors">
+            <Boxes size={22} />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-white">Cajas de Tareas</span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+              Organiza las tareas en secciones temáticas personalizables (En casa, Compras, Equipaje). Si se desactiva, las tareas se gestionan en una lista directa y unificada sin cajas.
+            </p>
+          </div>
+        </div>
+        <input 
+          type="checkbox" 
+          name="enableTaskCategories" 
+          bind:checked={taskCategoriesActive} 
+          onchange={triggerAutoSave}
+          class="w-5 h-5 accent-cyan-400 rounded-md cursor-pointer mt-1" 
+        />
+      </div>
+    </label>
+
     <!-- Inventario y Lista de la Compra -->
     <label class="block cursor-pointer bg-navy-surface p-4 rounded-2xl border transition-all {inventoryActive ? 'border-amber-400/40 bg-navy-surface/90' : 'border-white/5 opacity-70'} hover:border-white/20">
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-start gap-3">
           <div class="p-2.5 rounded-xl {inventoryActive ? 'bg-amber-400/20 text-amber-400' : 'bg-white/5 text-gray-500'} transition-colors">
-            <Boxes size={22} />
+            <Package size={22} />
           </div>
           <div>
             <div class="flex items-center gap-2">
               <span class="font-bold text-sm text-white">Inventario y Lista de la Compra</span>
             </div>
             <p class="text-xs text-gray-400 mt-1 leading-relaxed">
-              Gestiona comida o material por cajones (congelador, nevera, despensa) y sincroniza automáticamente las cosas que se acaban con la lista de la compra.
+              Módulo para gestionar provisiones, comida o material y sincronizar automáticamente las cosas agotadas con la lista de la compra.
             </p>
           </div>
         </div>
@@ -285,6 +315,34 @@
         />
       </div>
     </label>
+
+    <!-- Cajones del Inventario (solo si el módulo de inventario está activo) -->
+    {#if inventoryActive}
+      <label class="block cursor-pointer bg-navy-surface p-4 rounded-2xl border transition-all {inventoryLocationsActive ? 'border-amber-400/40 bg-navy-surface/90' : 'border-white/5 opacity-70'} hover:border-white/20 animate-in fade-in slide-in-from-top-1 ml-3 border-l-2 border-l-amber-400">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-start gap-3">
+            <div class="p-2.5 rounded-xl {inventoryLocationsActive ? 'bg-amber-400/20 text-amber-400' : 'bg-white/5 text-gray-500'} transition-colors">
+              <PackagePlus size={22} />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-white">Cajones del Inventario</span>
+              </div>
+              <p class="text-xs text-gray-400 mt-1 leading-relaxed">
+                Clasifica los productos por cajones o zonas (congelador, nevera, despensa...). Si se desactiva, todo el inventario se muestra en una lista directa y unificada.
+              </p>
+            </div>
+          </div>
+          <input 
+            type="checkbox" 
+            name="enableInventoryLocations" 
+            bind:checked={inventoryLocationsActive} 
+            onchange={triggerAutoSave}
+            class="w-5 h-5 accent-amber-400 rounded-md cursor-pointer mt-1" 
+          />
+        </div>
+      </label>
+    {/if}
 
     <div class="pt-4">
       <button 
@@ -311,6 +369,13 @@
         Divide la lista de tareas en secciones temáticas (ej: En casa, Compras, Equipaje).
       </p>
     </div>
+
+    {#if !taskCategoriesActive}
+      <div class="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-xs text-cyan-300 flex items-center gap-2">
+        <Boxes size={16} class="shrink-0" />
+        <span>Las cajas de tareas están desactivadas en los ajustes superiores. Puedes administrarlas aquí para cuando decidas reactivarlas.</span>
+      </div>
+    {/if}
 
     <!-- Formulario Nueva Caja -->
     <form onsubmit={handleCreateBox} class="bg-navy-surface p-4 rounded-2xl border border-white/5 space-y-3">

@@ -50,7 +50,9 @@ export const handle: Handle = async ({ event, resolve }) => {
               enablePoints: houseRecord.enablePoints ?? true,
               enableQuarantine: houseRecord.enableQuarantine ?? true,
               enableDueDates: houseRecord.enableDueDates ?? false,
-              enableInventory: houseRecord.enableInventory ?? false
+              enableInventory: houseRecord.enableInventory ?? false,
+              enableTaskCategories: houseRecord.enableTaskCategories ?? true,
+              enableInventoryLocations: houseRecord.enableInventoryLocations ?? true
             }
           };
         } else {
