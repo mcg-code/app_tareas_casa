@@ -28,6 +28,16 @@
   let newItemUnit = $state('uds');
   let newItemTarget = $state<'inventory' | 'shopping'>('inventory');
 
+  // Estados para editar objeto existente
+  let showEditItemModal = $state(false);
+  let editItemId = $state('');
+  let editItemName = $state('');
+  let editItemIcon = $state('📦');
+  let editItemLocationId = $state('none');
+  let editItemQuantity = $state(1);
+  let editItemShoppingQuantity = $state(1);
+  let editItemUnit = $state('uds');
+
   let collapsedLocations = $state<Record<string, boolean>>({});
 
   const popularLocationEmojis = ['🧊', '🥦', '🥫', '🥖', '🧃', '🍪', '🧴', '🧹', '✏️', '📓', '📦'];
@@ -175,6 +185,42 @@
     newItemIcon = '📦';
     showItemModal = true;
   }
+
+  function openEditItemModal(item: typeof data.items[0]) {
+    editItemId = item.id;
+    editItemName = item.name;
+    editItemIcon = item.icon || '📦';
+    editItemLocationId = item.locationId || 'none';
+    editItemQuantity = item.quantity ?? 0;
+    editItemShoppingQuantity = item.shoppingQuantity ?? 1;
+    editItemUnit = item.unit || '';
+    showEditItemModal = true;
+  }
+
+  async function handleUpdateItem(e: SubmitEvent) {
+    e.preventDefault();
+    if (!editItemId || !editItemName.trim()) return;
+    const formData = new FormData();
+    formData.append('itemId', editItemId);
+    formData.append('name', editItemName.trim());
+    formData.append('icon', editItemIcon);
+    formData.append('locationId', editItemLocationId);
+    formData.append('quantity', editItemQuantity.toString());
+    formData.append('shoppingQuantity', editItemShoppingQuantity.toString());
+    formData.append('unit', editItemUnit);
+
+    await fetch('?/updateItem', { method: 'POST', body: formData });
+    showEditItemModal = false;
+    await invalidateAll();
+  }
+
+  async function handleUpdateShoppingQuantity(itemId: string, delta: number) {
+    const formData = new FormData();
+    formData.append('itemId', itemId);
+    formData.append('delta', delta.toString());
+    await fetch('?/updateShoppingQuantity', { method: 'POST', body: formData });
+    await invalidateAll();
+  }
 </script>
 
 <div class="h-full w-full flex flex-col relative z-10 pt-4 pb-28">
@@ -217,7 +263,7 @@
       class="flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 {activeTab === 'inventory' ? 'bg-amber-400/15 text-amber-400 border border-amber-400/30' : 'text-gray-400 hover:text-gray-200'}"
     >
       <Boxes size={16} />
-      <span>Inventario ({inStockItems.length})</span>
+      <span>Inventario ({data.items.length})</span>
     </button>
     <button 
       onclick={() => activeTab = 'shopping'}
@@ -279,7 +325,9 @@
       {:else}
         <!-- Cajones personalizados -->
         {#each data.locations as loc}
-          {@const locItems = data.items.filter(i => i.locationId === loc.id && i.inStock)}
+          {@const locItems = data.items.filter(i => i.locationId === loc.id)}
+          {@const availableItems = locItems.filter(i => (i.quantity || 0) > 0)}
+          {@const outOfStockItems = locItems.filter(i => (i.quantity || 0) === 0)}
           {@const isCollapsed = collapsedLocations[loc.id]}
           <div class="mb-4 bg-navy-surface/50 border border-white/10 rounded-2xl p-4 shadow-glass transition-all fade-in">
             <div class="flex items-center justify-between gap-2 {isCollapsed && locItems.length === 0 ? '' : 'mb-3'}">
@@ -288,7 +336,7 @@
                 <h3 class="font-bold text-white text-base truncate flex items-center gap-2">
                   <span>{loc.name}</span>
                   <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-amber-400 shrink-0">
-                    {locItems.length}
+                    {availableItems.length}{#if outOfStockItems.length > 0}<span class="text-gray-400 font-normal">/{locItems.length}</span>{/if}
                   </span>
                 </h3>
               </div>
@@ -320,7 +368,8 @@
             {#if !isCollapsed}
               {#if locItems.length > 0}
                 <div class="space-y-2 mt-2">
-                  {#each locItems as item}
+                  <!-- Productos Disponibles (Stock > 0) -->
+                  {#each availableItems as item}
                     <div class="flex items-center justify-between p-3 rounded-xl bg-navy-surface border border-white/5 hover:border-white/15 transition-all">
                       <div class="flex items-center gap-3 min-w-0">
                         <span class="text-2xl shrink-0">{item.icon || '📦'}</span>
@@ -333,7 +382,7 @@
                       </div>
 
                       <div class="flex items-center gap-1.5 shrink-0">
-                        <!-- Ajuste de cantidad -->
+                        <!-- Ajuste rápido de stock -->
                         <div class="flex items-center bg-navy-bg/80 border border-white/5 rounded-xl overflow-hidden mr-1">
                           <button 
                             type="button"
@@ -367,15 +416,100 @@
 
                         <button 
                           type="button" 
+                          onclick={() => openEditItemModal(item)}
+                          class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                          title="Editar producto"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+
+                        <button 
+                          type="button" 
                           onclick={() => handleDeleteItem(item.id)}
                           class="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
-                          title="Borrar objeto"
+                          title="Borrar del catálogo"
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
                   {/each}
+
+                  <!-- Productos Agotados (Stock = 0): Permanecen en su cajón para no perder la referencia -->
+                  {#if outOfStockItems.length > 0}
+                    <div class="mt-3 pt-3 border-t border-white/5 space-y-2">
+                      <div class="flex items-center justify-between px-1">
+                        <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                          Agotados ({outOfStockItems.length})
+                        </span>
+                        <span class="text-[10px] text-gray-500">Referencia guardada en este cajón</span>
+                      </div>
+                      {#each outOfStockItems as item}
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-navy-surface/40 border border-white/5 hover:border-white/10 transition-all opacity-85 hover:opacity-100">
+                          <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-2xl shrink-0 grayscale">{item.icon || '📦'}</span>
+                            <div class="min-w-0">
+                              <h4 class="font-bold text-sm text-gray-300 truncate">{item.name}</h4>
+                              <div class="flex items-center gap-1.5 mt-0.5">
+                                {#if item.neededInShoppingList}
+                                  <span class="text-[10px] bg-amber-400/15 text-amber-300 font-semibold px-2 py-0.5 rounded-md border border-amber-400/20 flex items-center gap-1">
+                                    <ShoppingCart size={10} /> En la compra ({item.shoppingQuantity || 1} {item.unit || 'uds'})
+                                  </span>
+                                {:else}
+                                  <span class="text-[10px] bg-rose-500/15 text-rose-300 font-semibold px-2 py-0.5 rounded-md border border-rose-500/20">
+                                    🔴 Agotado (0 {item.unit || 'uds'})
+                                  </span>
+                                {/if}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="flex items-center gap-1.5 shrink-0">
+                            {#if !item.neededInShoppingList}
+                              <button 
+                                type="button" 
+                                onclick={() => handleSendToShopping(item.id)}
+                                class="flex items-center gap-1 px-2.5 py-1.5 bg-accent-cyan/10 hover:bg-accent-cyan hover:text-navy-bg text-accent-cyan text-xs font-bold rounded-xl border border-accent-cyan/30 transition-colors"
+                                title="Añadir a la lista de la compra"
+                              >
+                                <ShoppingCart size={13} />
+                                <span class="hidden xs:inline">+ Compra</span>
+                              </button>
+                            {/if}
+
+                            <!-- Botón para reponer 1 unidad directo -->
+                            <button 
+                              type="button"
+                              onclick={() => handleUpdateStock(item.id, 1)}
+                              class="px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white text-xs font-bold rounded-xl border border-emerald-500/20 transition-colors flex items-center gap-1"
+                              title="Reponer 1 unidad"
+                            >
+                              <Plus size={12} /> Reponer
+                            </button>
+
+                            <button 
+                              type="button" 
+                              onclick={() => openEditItemModal(item)}
+                              class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                              title="Editar producto"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+
+                            <button 
+                              type="button" 
+                              onclick={() => handleDeleteItem(item.id)}
+                              class="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                              title="Borrar del catálogo"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      {/each}
+                    </div>
+                  {/if}
                 </div>
               {:else}
                 <div class="py-3 text-center text-gray-500 text-xs border border-dashed border-white/5 rounded-xl mt-1">
@@ -387,8 +521,10 @@
         {/each}
 
         <!-- Objetos sin cajón asignado -->
-        {@const unassignedItems = inStockItems.filter(i => !i.locationId)}
-        {#if unassignedItems.length > 0}
+        {@const unassignedAll = data.items.filter(i => !i.locationId)}
+        {@const unassignedAvailable = unassignedAll.filter(i => (i.quantity || 0) > 0)}
+        {@const unassignedOutOfStock = unassignedAll.filter(i => (i.quantity || 0) === 0)}
+        {#if unassignedAll.length > 0}
           {@const isCollapsed = collapsedLocations['unassigned']}
           <div class="mb-4 bg-navy-surface/30 border border-white/5 rounded-2xl p-4 shadow-glass transition-all fade-in">
             <div class="flex items-center justify-between gap-2 {isCollapsed ? '' : 'mb-3'}">
@@ -397,7 +533,7 @@
                 <h3 class="font-bold text-gray-300 text-base flex items-center gap-2">
                   <span>General / Sin cajón</span>
                   <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/10 text-gray-400">
-                    {unassignedItems.length}
+                    {unassignedAvailable.length}{#if unassignedOutOfStock.length > 0}<span class="text-gray-400 font-normal">/{unassignedAll.length}</span>{/if}
                   </span>
                 </h3>
               </div>
@@ -416,7 +552,7 @@
 
             {#if !isCollapsed}
               <div class="space-y-2 mt-2">
-                {#each unassignedItems as item}
+                {#each unassignedAvailable as item}
                   <div class="flex items-center justify-between p-3 rounded-xl bg-navy-surface border border-white/5">
                     <div class="flex items-center gap-3 min-w-0">
                       <span class="text-2xl shrink-0">{item.icon || '📦'}</span>
@@ -433,9 +569,90 @@
                       >
                         Se acabó
                       </button>
+                      <button 
+                        type="button" 
+                        onclick={() => openEditItemModal(item)}
+                        class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                        title="Editar producto"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button 
+                        type="button" 
+                        onclick={() => handleDeleteItem(item.id)}
+                        class="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                        title="Borrar del catálogo"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
                 {/each}
+
+                {#if unassignedOutOfStock.length > 0}
+                  <div class="mt-3 pt-3 border-t border-white/5 space-y-2">
+                    <div class="flex items-center justify-between px-1">
+                      <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                        Agotados ({unassignedOutOfStock.length})
+                      </span>
+                    </div>
+                    {#each unassignedOutOfStock as item}
+                      <div class="flex items-center justify-between p-3 rounded-xl bg-navy-surface/40 border border-white/5 opacity-85 hover:opacity-100">
+                        <div class="flex items-center gap-3 min-w-0">
+                          <span class="text-2xl shrink-0 grayscale">{item.icon || '📦'}</span>
+                          <div class="min-w-0">
+                            <h4 class="font-bold text-sm text-gray-300 truncate">{item.name}</h4>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                              {#if item.neededInShoppingList}
+                                <span class="text-[10px] bg-amber-400/15 text-amber-300 font-semibold px-2 py-0.5 rounded-md border border-amber-400/20 flex items-center gap-1">
+                                  <ShoppingCart size={10} /> En la compra ({item.shoppingQuantity || 1} {item.unit || 'uds'})
+                                </span>
+                              {:else}
+                                <span class="text-[10px] bg-rose-500/15 text-rose-300 font-semibold px-2 py-0.5 rounded-md border border-rose-500/20">
+                                  🔴 Agotado
+                                </span>
+                              {/if}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="flex items-center gap-1.5 shrink-0">
+                          {#if !item.neededInShoppingList}
+                            <button 
+                              type="button" 
+                              onclick={() => handleSendToShopping(item.id)}
+                              class="flex items-center gap-1 px-2.5 py-1.5 bg-accent-cyan/10 hover:bg-accent-cyan hover:text-navy-bg text-accent-cyan text-xs font-bold rounded-xl border border-accent-cyan/30 transition-colors"
+                            >
+                              <ShoppingCart size={13} /> + Compra
+                            </button>
+                          {/if}
+                          <button 
+                            type="button"
+                            onclick={() => handleUpdateStock(item.id, 1)}
+                            class="px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white text-xs font-bold rounded-xl border border-emerald-500/20 transition-colors flex items-center gap-1"
+                          >
+                            <Plus size={12} /> Reponer
+                          </button>
+                          <button 
+                            type="button" 
+                            onclick={() => openEditItemModal(item)}
+                            class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button 
+                            type="button" 
+                            onclick={() => handleDeleteItem(item.id)}
+                            class="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
               </div>
             {/if}
           </div>
@@ -564,19 +781,50 @@
                         <span>{loc.icon || '🧊'}</span> {loc.name}
                       </span>
                     {/if}
-                    <span class="text-[11px] text-accent-cyan font-semibold">
-                      {item.shoppingQuantity || 1} {item.unit || 'uds'}
-                    </span>
                   </div>
                 </div>
               </div>
 
-              <div class="flex items-center gap-1.5 shrink-0">
+              <div class="flex items-center gap-2 shrink-0">
+                <!-- Stepper de unidades a comprar -->
+                <div class="flex items-center bg-navy-bg/90 border border-white/10 rounded-xl overflow-hidden shadow-inner">
+                  <button 
+                    type="button"
+                    disabled={item.isBought || (item.shoppingQuantity || 1) <= 1}
+                    onclick={() => handleUpdateShoppingQuantity(item.id, -1)}
+                    class="px-2.5 py-1.5 text-gray-400 hover:text-white hover:bg-white/5 text-xs font-bold transition-colors disabled:opacity-25"
+                    title="Comprar 1 menos"
+                  >
+                    -
+                  </button>
+                  <span class="px-2 text-xs font-bold text-accent-cyan whitespace-nowrap min-w-[45px] text-center">
+                    {item.shoppingQuantity || 1} {item.unit || 'uds'}
+                  </span>
+                  <button 
+                    type="button"
+                    disabled={item.isBought}
+                    onclick={() => handleUpdateShoppingQuantity(item.id, 1)}
+                    class="px-2.5 py-1.5 text-gray-400 hover:text-white hover:bg-white/5 text-xs font-bold transition-colors disabled:opacity-25"
+                    title="Comprar 1 más"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button 
+                  type="button" 
+                  onclick={() => openEditItemModal(item)}
+                  class="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                  title="Editar producto"
+                >
+                  <Edit2 size={14} />
+                </button>
+
                 <button 
                   type="button" 
                   onclick={() => handleRemoveFromShopping(item.id)}
-                  class="p-2 text-gray-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
-                  title="Quitar de la lista"
+                  class="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                  title="Quitar de la lista de compra (permanece en inventario como agotado)"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -793,6 +1041,118 @@
           >
             <Plus size={16} /> Guardar Objeto
           </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal para Editar Objeto / Producto -->
+{#if showEditItemModal}
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-6 animate-in fade-in" onclick={() => showEditItemModal = false}>
+    <div class="bg-navy-bg border border-white/15 w-full max-w-lg rounded-3xl shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh] overflow-hidden" onclick={(e) => e.stopPropagation()}>
+      
+      <!-- Cabecera Fija -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-white/10 shrink-0 bg-navy-surface/40">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <span>✏️</span> Editar Producto
+        </h3>
+        <button type="button" onclick={() => showEditItemModal = false} class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-white/5 transition-colors">
+          <X size={20} />
+        </button>
+      </div>
+
+      <!-- Formulario scrolleable -->
+      <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 overscroll-contain">
+        <form onsubmit={handleUpdateItem} class="space-y-4">
+          <div class="space-y-1">
+            <label class="text-[11px] text-gray-400">Nombre del objeto o producto</label>
+            <input 
+              type="text" 
+              bind:value={editItemName}
+              class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none focus:border-amber-400 font-medium"
+              required
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[11px] text-gray-400">Emoji / Icono</label>
+            <div class="flex flex-wrap gap-1.5">
+              {#each popularItemEmojis as em}
+                <button 
+                  type="button" 
+                  onclick={() => editItemIcon = em}
+                  class="w-8 h-8 rounded-lg flex items-center justify-center text-base border transition-all {editItemIcon === em ? 'bg-amber-400/20 border-amber-400 scale-110 shadow-sm' : 'bg-navy-surface border-white/5 hover:bg-white/5'}"
+                >
+                  {em}
+                </button>
+              {/each}
+            </div>
+          </div>
+
+          {#if data.locations.length > 0}
+            <div class="space-y-1">
+              <label class="text-[11px] text-gray-400">Cajón habitual</label>
+              <select 
+                bind:value={editItemLocationId}
+                class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
+              >
+                <option value="none">General (Sin cajón)</option>
+                {#each data.locations as loc}
+                  <option value={loc.id}>{loc.icon || '🧊'} {loc.name}</option>
+                {/each}
+              </select>
+            </div>
+          {/if}
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-[11px] text-gray-400">Existencias actuales en inventario</label>
+              <input 
+                type="number" 
+                bind:value={editItemQuantity}
+                min="0"
+                max="999"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
+              />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[11px] text-gray-400">Unidad</label>
+              <input 
+                type="text" 
+                bind:value={editItemUnit}
+                placeholder="uds, kg, L, paq"
+                class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-[11px] text-gray-400">Cantidad habitual a comprar</label>
+            <input 
+              type="number" 
+              bind:value={editItemShoppingQuantity}
+              min="1"
+              max="999"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-navy-surface border border-white/10 text-white text-sm outline-none"
+            />
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button 
+              type="button"
+              onclick={() => showEditItemModal = false}
+              class="flex-1 py-3 bg-navy-surface hover:bg-white/10 text-gray-300 font-bold text-xs rounded-xl transition-all border border-white/5"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              class="flex-1 py-3 bg-amber-400 hover:bg-amber-300 text-navy-bg font-bold text-xs rounded-xl transition-all shadow-glow flex items-center justify-center gap-1.5"
+            >
+              <Check size={16} /> Guardar Cambios
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -261,6 +261,60 @@ export const actions = {
     return { success: true };
   },
 
+  updateShoppingQuantity: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+
+    const data = await request.formData();
+    const itemId = data.get('itemId')?.toString();
+    const deltaStr = data.get('delta')?.toString();
+    if (!itemId || !deltaStr) return fail(400);
+
+    const delta = parseInt(deltaStr) || 0;
+    const item = await db.select().from(inventoryItems)
+      .where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.houseId, locals.user.houseId)))
+      .get();
+
+    if (!item) return fail(404);
+
+    const newQty = Math.max(1, (item.shoppingQuantity || 1) + delta);
+    await db.update(inventoryItems).set({
+      shoppingQuantity: newQty
+    }).where(eq(inventoryItems.id, itemId));
+
+    return { success: true };
+  },
+
+  updateItem: async ({ request, locals }) => {
+    if (!locals.user || !locals.user.houseId) return fail(401);
+
+    const data = await request.formData();
+    const itemId = data.get('itemId')?.toString();
+    const name = data.get('name')?.toString().trim();
+    const icon = data.get('icon')?.toString().trim() || '📦';
+    const locationIdRaw = data.get('locationId')?.toString();
+    const locationId = locationIdRaw && locationIdRaw !== 'none' ? locationIdRaw : null;
+    const quantityStr = data.get('quantity')?.toString();
+    const shoppingQuantityStr = data.get('shoppingQuantity')?.toString();
+    const unit = data.get('unit')?.toString().trim() || null;
+
+    if (!itemId || !name) return fail(400);
+
+    const quantity = Math.max(0, parseInt(quantityStr ?? '0') || 0);
+    const shoppingQuantity = Math.max(1, parseInt(shoppingQuantityStr ?? '1') || 1);
+
+    await db.update(inventoryItems).set({
+      name,
+      icon,
+      locationId,
+      quantity,
+      inStock: quantity > 0,
+      shoppingQuantity,
+      unit
+    }).where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.houseId, locals.user.houseId)));
+
+    return { success: true };
+  },
+
   deleteItem: async ({ request, locals }) => {
     if (!locals.user || !locals.user.houseId) return fail(401);
 
