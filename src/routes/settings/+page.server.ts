@@ -47,6 +47,23 @@ export const actions = {
       enableQuarantine
     }).where(eq(houses.id, houseId));
 
-    return { success: true };
+    if (locals.user) {
+      locals.user.settings = {
+        enableStore,
+        enableFeed,
+        enablePoints,
+        enableQuarantine
+      };
+    }
+
+    return { 
+      success: true,
+      settings: {
+        enableStore,
+        enableFeed,
+        enablePoints,
+        enableQuarantine
+      }
+    };
   }
 } satisfies Actions;

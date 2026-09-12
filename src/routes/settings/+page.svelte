@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Home } from '@lucide/svelte';
+  import { enhance } from '$app/forms';
+  import { invalidateAll } from '$app/navigation';
+  import { Settings, Store, Trophy, ShieldAlert, Sparkles, ArrowLeft, Check, Loader2 } from '@lucide/svelte';
   
   let { data, form } = $props();
 
@@ -8,6 +10,19 @@
   let pointsActive = $state(data.settings?.enablePoints ?? true);
   let quarantineActive = $state(data.settings?.enableQuarantine ?? true);
   let showSavedNotification = $state(false);
+  let isSaving = $state(false);
+
+  let formElement: HTMLFormElement | undefined = $state();
+  let saveTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  $effect(() => {
+    if (data.settings) {
+      storeActive = data.settings.enableStore ?? true;
+      feedActive = data.settings.enableFeed ?? true;
+      pointsActive = data.settings.enablePoints ?? true;
+      quarantineActive = data.settings.enableQuarantine ?? true;
+    }
+  });
 
   $effect(() => {
     if (form?.success) {
@@ -16,34 +31,34 @@
       return () => clearTimeout(t);
     }
   });
+
+  function triggerAutoSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      if (formElement) {
+        formElement.requestSubmit();
+      }
+    }, 100);
+  }
 </script>
 
 <div class="h-full w-full flex flex-col relative z-10 pt-4 pb-28 max-w-md mx-auto fade-in">
-  <!-- Cabecera -->
-  <header class="mb-6 px-1 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <a 
-        href="/tasks" 
-        class="p-2.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-xl transition-all border border-white/5 shadow-glass"
-        title="Volver a Tareas"
-      >
-        <ArrowLeft size={18} />
-      </a>
-      <div>
-        <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-          <Settings size={22} class="text-accent-cyan" /> Ajustes del Espacio
-        </h2>
-        <p class="text-xs text-gray-400 mt-0.5">{data.houseName} • <span class="font-mono">{data.houseCode}</span></p>
-      </div>
-    </div>
-
+  <!-- Cabecera sin botón de menú principal / casas a la derecha -->
+  <header class="mb-6 px-1 flex items-center gap-3">
     <a 
-      href="/houses" 
+      href="/tasks" 
+      onclick={async () => { await invalidateAll(); }}
       class="p-2.5 bg-navy-surface hover:bg-white/10 text-gray-300 hover:text-white rounded-xl transition-all border border-white/5 shadow-glass"
-      title="Cambiar de Casa"
+      title="Volver a Tareas"
     >
-      <Home size={18} />
+      <ArrowLeft size={18} />
     </a>
+    <div>
+      <h2 class="text-xl font-bold flex items-center gap-2 text-white">
+        <Settings size={22} class="text-accent-cyan" /> Ajustes del Espacio
+      </h2>
+      <p class="text-xs text-gray-400 mt-0.5">{data.houseName} • <span class="font-mono">{data.houseCode}</span></p>
+    </div>
   </header>
 
   {#if showSavedNotification}
@@ -56,7 +71,22 @@
     Elige qué funciones están activas en este espacio. Las funciones desactivadas se ocultarán de la barra inferior y de la interfaz para todos los miembros.
   </p>
 
-  <form method="POST" action="?/saveSettings" class="space-y-3">
+  <form 
+    bind:this={formElement}
+    method="POST" 
+    action="?/saveSettings" 
+    use:enhance={() => {
+      isSaving = true;
+      return async ({ update }) => {
+        await update({ reset: false });
+        await invalidateAll();
+        isSaving = false;
+        showSavedNotification = true;
+        const t = setTimeout(() => showSavedNotification = false, 3000);
+      };
+    }}
+    class="space-y-3"
+  >
     <!-- Tienda de Recompensas -->
     <label class="block cursor-pointer bg-navy-surface p-4 rounded-2xl border transition-all {storeActive ? 'border-accent-orange/40 bg-navy-surface/90' : 'border-white/5 opacity-70'} hover:border-white/20">
       <div class="flex items-start justify-between gap-3">
@@ -77,6 +107,7 @@
           type="checkbox" 
           name="enableStore" 
           bind:checked={storeActive} 
+          onchange={triggerAutoSave}
           class="w-5 h-5 accent-accent-orange rounded-md cursor-pointer mt-1" 
         />
       </div>
@@ -102,6 +133,7 @@
           type="checkbox" 
           name="enableFeed" 
           bind:checked={feedActive} 
+          onchange={triggerAutoSave}
           class="w-5 h-5 accent-accent-cyan rounded-md cursor-pointer mt-1" 
         />
       </div>
@@ -127,6 +159,7 @@
           type="checkbox" 
           name="enablePoints" 
           bind:checked={pointsActive} 
+          onchange={triggerAutoSave}
           class="w-5 h-5 accent-yellow-400 rounded-md cursor-pointer mt-1" 
         />
       </div>
@@ -152,6 +185,7 @@
           type="checkbox" 
           name="enableQuarantine" 
           bind:checked={quarantineActive} 
+          onchange={triggerAutoSave}
           class="w-5 h-5 accent-emerald-400 rounded-md cursor-pointer mt-1" 
         />
       </div>
@@ -160,9 +194,14 @@
     <div class="pt-4">
       <button 
         type="submit" 
-        class="w-full py-3.5 bg-accent-cyan hover:bg-cyan-400 text-navy-bg font-bold text-sm rounded-xl transition-all shadow-glow flex items-center justify-center gap-2"
+        disabled={isSaving}
+        class="w-full py-3.5 bg-accent-cyan hover:bg-cyan-400 disabled:opacity-60 text-navy-bg font-bold text-sm rounded-xl transition-all shadow-glow flex items-center justify-center gap-2"
       >
-        Guardar Configuración <Check size={18} strokeWidth={2.5} />
+        {#if isSaving}
+          <Loader2 size={18} class="animate-spin" /> Guardando cambios...
+        {:else}
+          Guardar Configuración <Check size={18} strokeWidth={2.5} />
+        {/if}
       </button>
     </div>
   </form>
