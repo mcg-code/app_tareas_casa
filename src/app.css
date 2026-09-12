@@ -77,10 +77,21 @@
 }
 
 @layer base {
+  html {
+    background-color: var(--theme-bg, #15100e);
+    min-height: 100%;
+    color-scheme: dark;
+  }
   body {
-    @apply bg-navy-bg text-gray-100 font-sans antialiased selection:bg-accent-cyan selection:text-white transition-colors duration-200;
+    background-color: var(--theme-bg, #15100e);
+    min-height: 100%;
+    @apply text-gray-100 font-sans antialiased selection:bg-accent-cyan selection:text-white transition-colors duration-200;
     font-family: var(--font-sans);
   }
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Ocultar barra de desplazamiento para un look más "app" */

@@ -14,8 +14,8 @@ export default defineConfig({
         name: 'Tareas en Familia',
         short_name: 'Tareas',
         description: 'La app para repartir el esfuerzo de casa.',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#15100e',
+        background_color: '#15100e',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
