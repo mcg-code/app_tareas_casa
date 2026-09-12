@@ -1,8 +1,8 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { taskTemplates, tasks, taskApprovals, frozenPoints, taskCategories } from '$lib/server/db/schema';
-import { eq, like, and, asc } from 'drizzle-orm';
+import { taskTemplates, tasks, taskApprovals, frozenPoints, taskCategories, houses } from '$lib/server/db/schema';
+import { eq, like, and, asc, desc } from 'drizzle-orm';
 import { generateId } from '$lib/server/utils';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -10,15 +10,33 @@ export const load: PageServerLoad = async ({ locals, url }) => {
   if (!locals.user.houseId) redirect(303, '/houses');
   
   const houseId = locals.user.houseId;
-  const templates = await db.select().from(taskTemplates)
-    .where(eq(taskTemplates.houseId, houseId))
-    .orderBy(taskTemplates.createdAt);
+  const house = await db.select().from(houses).where(eq(houses.id, houseId)).get();
+
+  const rawTemplates = await db.select().from(taskTemplates)
+    .where(eq(taskTemplates.houseId, houseId));
+
+  // Contar frecuencias de uso de cada plantilla
+  const houseTasks = await db.select({ templateId: tasks.templateId })
+    .from(tasks)
+    .where(eq(tasks.houseId, houseId));
+
+  const usageCounts: Record<string, number> = {};
+  for (const t of houseTasks) {
+    if (t.templateId) {
+      usageCounts[t.templateId] = (usageCounts[t.templateId] || 0) + 1;
+    }
+  }
+
+  const templates = rawTemplates.map(t => ({
+    ...t,
+    usageCount: usageCounts[t.id] || 0
+  })).sort((a, b) => (b.usageCount - a.usageCount) || (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
 
   const categories = await db.select().from(taskCategories)
     .where(eq(taskCategories.houseId, houseId))
     .orderBy(asc(taskCategories.order), asc(taskCategories.createdAt));
 
-  return { templates, categories, user: locals.user };
+  return { templates, categories, user: locals.user, house };
 };
 
 export const actions = {
@@ -26,6 +44,9 @@ export const actions = {
     if (!locals.user || !locals.user.houseId || !locals.user.memberId) return fail(401);
     const houseId = locals.user.houseId;
     const memberId = locals.user.memberId;
+
+    const house = await db.select().from(houses).where(eq(houses.id, houseId)).get();
+    const isPointsEnabled = house?.enablePoints ?? (locals.user.settings?.enablePoints ?? true);
 
     const data = await request.formData();
     const title = data.get('title')?.toString().trim();
@@ -36,7 +57,9 @@ export const actions = {
     const categoryIdRaw = data.get('categoryId')?.toString();
     const categoryId = categoryIdRaw && categoryIdRaw !== 'none' ? categoryIdRaw : null;
 
-    if (!title || !pointsStr) return fail(400);
+    if (!title) return fail(400, { error: 'El título es obligatorio' });
+
+    const points = isPointsEnabled ? parseInt(pointsStr || '50') : 0;
 
     const templateId = generateId();
     await db.insert(taskTemplates).values({
@@ -44,7 +67,7 @@ export const actions = {
       houseId,
       categoryId,
       title,
-      basePoints: parseInt(pointsStr),
+      basePoints: points,
       frequency: frequency as 'none' | 'daily' | 'weekly' | 'monthly',
       frequencyValue: frequencyValueStr ? parseInt(frequencyValueStr) : null,
       creatorId: memberId,
@@ -59,8 +82,8 @@ export const actions = {
       categoryId,
       templateId,
       title,
-      basePoints: parseInt(pointsStr),
-      currentPoints: parseInt(pointsStr),
+      basePoints: points,
+      currentPoints: points,
       dueDate
     });
 
